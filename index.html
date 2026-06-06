@@ -220,6 +220,12 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
+/* ===== TWEET CATEGORY CHECKS ===== */
+.tweet-cat-check{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:5px 9px;cursor:pointer;font-size:11px;font-weight:900;color:var(--text2);transition:all .14s;user-select:none}
+.tweet-cat-check.on{background:var(--ac-light);border-color:var(--ac);color:var(--ac-dark)}
+.tweet-cat-check .tcc{width:14px;height:14px;border-radius:4px;border:2px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;background:var(--white)}
+.tweet-cat-check.on .tcc{background:var(--ac);border-color:var(--ac);color:white}
+
 /* ===== GIFT TOGGLE ===== */
 .gift-toggle-btn{flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-family:inherit;font-size:12px;font-weight:900;cursor:pointer;transition:all .15s}
 .gift-toggle-btn.active{background:var(--ac);color:white;box-shadow:0 2px 8px rgba(78,205,230,.3)}
@@ -278,6 +284,7 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 <div class="tweet-modal-overlay" id="tweet-modal">
   <div class="tweet-modal">
     <div class="tweet-modal-title">🐦 進捗をツイート</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="tweet-cat-checks"></div>
     <div class="tweet-preview" id="tweet-preview"></div>
     <div class="tweet-char" id="tweet-char">0 / 280</div>
     <input class="tweet-hashtag" type="text" id="tweet-hashtag" placeholder="#IRIAM #IRIAMライバー" value="#IRIAM #IRIAMライバー" oninput="updateTweetPreview()">
@@ -945,42 +952,85 @@ function getRemainingItems(sec,data,total){
   for(let i=0;i<total;i++){if(!state[sec].has(i))remaining.push(data[i]);}
   return remaining;
 }
+// ツイートカテゴリ定義
+const TWEET_CATS=[
+  {id:'pref',label:'🗾 都道府県'},
+  {id:'star',label:'⭐ 星座'},
+  {id:'mbti',label:'🧠 MBTI'},
+  {id:'gift',label:'🎁 ギフト'},
+  {id:'counter',label:'🚪 カウンター'},
+];
+// 選択状態（デフォルト全ON）
+const tweetCatState={pref:true,star:true,mbti:true,gift:true,counter:true};
+
+function buildTweetCatChecks(){
+  const wrap=document.getElementById('tweet-cat-checks');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  TWEET_CATS.forEach(cat=>{
+    const el=document.createElement('div');
+    el.className='tweet-cat-check'+(tweetCatState[cat.id]?' on':'');
+    el.innerHTML=`<span class="tcc">${tweetCatState[cat.id]?'✓':''}</span>${cat.label}`;
+    el.onclick=()=>{
+      tweetCatState[cat.id]=!tweetCatState[cat.id];
+      el.classList.toggle('on',tweetCatState[cat.id]);
+      el.querySelector('.tcc').textContent=tweetCatState[cat.id]?'✓':'';
+      updateTweetPreview();
+    };
+    wrap.appendChild(el);
+  });
+}
+
 function buildTweetText(hashtag){
   const lines=[];
   // 都道府県
-  const prefDone=state.pref.size,prefTotal=PREFS.length;
-  const prefRem=PREFS.filter((_,i)=>!state.pref.has(i));
-  lines.push(`🗾 47都道府県 ${prefDone}/${prefTotal}`);
-  if(prefRem.length>0&&prefRem.length<=5)lines.push(`残り：${prefRem.join(' ')}`);
+  if(tweetCatState.pref){
+    const prefDone=state.pref.size,prefTotal=PREFS.length;
+    const prefRem=PREFS.filter((_,i)=>!state.pref.has(i));
+    lines.push(`🗾 47都道府県 ${prefDone}/${prefTotal}`);
+    if(prefRem.length>0&&prefRem.length<=5)lines.push(`残り：${prefRem.join(' ')}`);
+  }
   // 星座
-  const starDone=state.star.size,starTotal=STARS.length;
-  const starRem=STARS.filter((_,i)=>!state.star.has(i)).map(s=>s.n);
-  lines.push(`⭐ 12星座 ${starDone}/${starTotal}`);
-  if(starRem.length>0&&starRem.length<=3)lines.push(`残り：${starRem.join(' ')}`);
+  if(tweetCatState.star){
+    const starDone=state.star.size,starTotal=STARS.length;
+    const starRem=STARS.filter((_,i)=>!state.star.has(i)).map(s=>s.n);
+    lines.push(`⭐ 12星座 ${starDone}/${starTotal}`);
+    if(starRem.length>0&&starRem.length<=3)lines.push(`残り：${starRem.join(' ')}`);
+  }
   // MBTI
-  const mbtiDone=state.mbti.size,mbtiTotal=MBTI_LIST.length;
-  const mbtiRem=MBTI_LIST.filter((_,i)=>!state.mbti.has(i)).map(m=>m.c);
-  lines.push(`🧠 MBTI ${mbtiDone}/${mbtiTotal}`);
-  if(mbtiRem.length>0&&mbtiRem.length<=4)lines.push(`残り：${mbtiRem.join(' ')}`);
+  if(tweetCatState.mbti){
+    const mbtiDone=state.mbti.size,mbtiTotal=MBTI_LIST.length;
+    const mbtiRem=MBTI_LIST.filter((_,i)=>!state.mbti.has(i)).map(m=>m.c);
+    lines.push(`🧠 MBTI ${mbtiDone}/${mbtiTotal}`);
+    if(mbtiRem.length>0&&mbtiRem.length<=4)lines.push(`残り：${mbtiRem.join(' ')}`);
+  }
   // ギフト（モードに応じて切り替え）
-  if(state.giftMode==='full'){
-    const giftTotal=Object.values(GIFTS).reduce((s,g)=>s+g.items.length,0);
-    const giftDone=Object.values(state.gift).reduce((s,st)=>s+st.size,0);
-    lines.push(`🎁 全ギフト耐久 ${giftDone}/${giftTotal}`);
-    Object.entries(GIFTS).forEach(([cat,data])=>{
-      const rem=data.items.filter((_,i)=>!state.gift[cat].has(i));
-      if(rem.length>0&&rem.length<=2)lines.push(`残り[${cat}]：${rem.join(' ')}`);
-    });
-  } else {
-    const pgTotal=Object.values(PETIT_GIFTS).reduce((s,g)=>s+g.items.length,0);
-    const pgDone=Object.values(state.petitGift).reduce((s,st)=>s+st.size,0);
-    lines.push(`💎 プチギフト耐久 ${pgDone}/${pgTotal}`);
-    Object.entries(PETIT_GIFTS).forEach(([cat,data])=>{
-      const rem=data.items.filter((_,i)=>!state.petitGift[cat].has(i));
-      if(rem.length>0&&rem.length<=2)lines.push(`残り[${cat}]：${rem.join(' ')}`);
+  if(tweetCatState.gift){
+    if(state.giftMode==='full'){
+      const giftTotal=Object.values(GIFTS).reduce((s,g)=>s+g.items.length,0);
+      const giftDone=Object.values(state.gift).reduce((s,st)=>s+st.size,0);
+      lines.push(`🎁 全ギフト耐久 ${giftDone}/${giftTotal}`);
+      Object.entries(GIFTS).forEach(([cat,data])=>{
+        const rem=data.items.filter((_,i)=>!state.gift[cat].has(i));
+        if(rem.length>0&&rem.length<=2)lines.push(`残り[${cat}]：${rem.join(' ')}`);
+      });
+    } else {
+      const pgTotal=Object.values(PETIT_GIFTS).reduce((s,g)=>s+g.items.length,0);
+      const pgDone=Object.values(state.petitGift).reduce((s,st)=>s+st.size,0);
+      lines.push(`💎 プチギフト耐久 ${pgDone}/${pgTotal}`);
+      Object.entries(PETIT_GIFTS).forEach(([cat,data])=>{
+        const rem=data.items.filter((_,i)=>!state.petitGift[cat].has(i));
+        if(rem.length>0&&rem.length<=2)lines.push(`残り[${cat}]：${rem.join(' ')}`);
+      });
+    }
+  }
+  // カウンター
+  if(tweetCatState.counter&&state.counters.length>0){
+    state.counters.forEach(c=>{
+      lines.push(`🚪 ${c.name} ${c.value}`);
     });
   }
-  lines.push('');
+  if(lines.length>0)lines.push('');
   lines.push(hashtag||'#IRIAM #IRIAMライバー');
   return lines.join('\n');
 }
@@ -994,6 +1044,7 @@ function updateTweetPreview(){
   charEl.className='tweet-char'+(len>280?' over':'');
 }
 function openTweetModal(){
+  buildTweetCatChecks();
   updateTweetPreview();
   document.getElementById('tweet-modal').classList.add('open');
 }
@@ -1106,7 +1157,7 @@ function buildDarkSettings(){
     const itemsHtml=state.darkItems[rar].map((v,i)=>`<div class="dark-item-wrap"><input class="dark-item-input" type="text" value="${esc(v)}" placeholder="アイテム名" oninput="state.darkItems['${rar}'][${i}]=this.value"><button class="dark-item-del" onclick="removeDarkItem('${rar}',${i})">✕</button></div>`).join('');
     // Fill up to 5 empty slots if fewer items
     const empties=Math.max(0,5-state.darkItems[rar].length);
-    const emptyHtml=Array.from({length:empties},(_,j)=>`<div class="dark-item-wrap"><input class="dark-item-input" type="text" placeholder="アイテム名" oninput="addDarkItemInline('${rar}',this)"></div>`).join('');
+    const emptyHtml=Array.from({length:empties},(_,j)=>`<div class="dark-item-wrap"><input class="dark-item-input" type="text" placeholder="アイテム名" onblur="addDarkItemInline('${rar}',this)" onkeydown="if(event.key==='Enter'){this.blur()}"></div>`).join('');
     block.innerHTML=`<div class="dark-rarity-head"><span class="dark-rarity-badge" style="background:${DARK_RARITY_COLORS[rar]}">${rar}</span><span class="dark-rate-label">確率</span><input class="dark-rate-input" type="number" id="dark-rate-${rar}" value="${state.darkRates[rar]}" min="0" max="100" step="0.1" oninput="updateDarkRate('${rar}',this.value)"><span class="dark-rate-label">%</span></div><div class="dark-items-grid" id="dark-items-${rar}">${itemsHtml}${emptyHtml}<button class="dark-add-item-btn" onclick="addDarkItem('${rar}')">＋ 追加</button></div>`;
     wrap.appendChild(block);
   });
