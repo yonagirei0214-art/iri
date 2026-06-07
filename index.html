@@ -230,7 +230,35 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 .gift-toggle-btn{flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-family:inherit;font-size:12px;font-weight:900;cursor:pointer;transition:all .15s}
 .gift-toggle-btn.active{background:var(--ac);color:white;box-shadow:0 2px 8px rgba(78,205,230,.3)}
 
-/* ===== DARK GACHA ===== */
+/* ===== DURABILITY ===== */
+.dur-card{background:var(--white);border:2px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.dur-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dur-title-input{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:14px;font-weight:900;padding:8px 12px;outline:none;transition:border-color .16s}
+.dur-title-input:focus{border-color:var(--ac)}
+.dur-del-btn{background:#fff0f2;border:2px solid #ffd0d6;border-radius:12px;color:var(--red);font-family:inherit;font-size:13px;font-weight:900;padding:8px 11px;cursor:pointer;flex-shrink:0}
+.dur-del-btn:active{transform:scale(.92)}
+.dur-prog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.dur-prog-text{font-size:12px;font-weight:900;color:var(--text2)}
+.dur-prog-text span{font-size:18px;color:var(--text);font-family:'Nunito',sans-serif}
+.dur-prog-text.done span{color:var(--green)}
+.dur-items{display:flex;flex-direction:column;gap:7px;margin:10px 0}
+.dur-item{display:flex;align-items:center;gap:8px;background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:9px 10px;cursor:pointer;transition:all .14s;user-select:none}
+.dur-item:active{transform:scale(.97)}
+.dur-item.checked{background:var(--ac-light);border-color:var(--ac);opacity:.75}
+.dur-item .cb{width:20px;height:20px;border-radius:6px;border:2.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .14s;background:var(--white)}
+.dur-item.checked .cb{background:var(--ac);border-color:var(--ac);color:white}
+.dur-item-label{flex:1;font-size:13px;font-weight:900;line-height:1.3}
+.dur-item.checked .dur-item-label{text-decoration:line-through;color:var(--text2)}
+.dur-item-del{background:transparent;border:none;color:var(--text2);font-size:15px;cursor:pointer;padding:2px 5px;flex-shrink:0;opacity:.6}
+.dur-add-row{display:flex;gap:8px;margin-top:6px}
+.dur-add-input{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:13px;font-weight:700;padding:9px 12px;outline:none;transition:border-color .16s}
+.dur-add-input:focus{border-color:var(--ac)}
+.dur-add-btn{background:var(--ac);border:none;border-radius:12px;color:white;font-family:inherit;font-size:13px;font-weight:900;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.dur-add-btn:active{transform:scale(.93)}
+.dur-reset-btn{background:var(--ac-light);border:2px solid var(--border);color:var(--ac-dark);padding:6px 10px;border-radius:10px;font-size:11px;font-weight:900;cursor:pointer;font-family:inherit}
+.dur-reset-btn:active{transform:scale(.93)}
+
+
 .dark-rarity-block{background:var(--bg);border:2px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px}
 .dark-rarity-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .dark-rarity-badge{font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;padding:4px 12px;border-radius:20px;color:white}
@@ -381,6 +409,12 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
         <button class="add-counter-btn" style="width:auto;padding:8px 16px;font-size:13px" onclick="addAny()">＋ 追加</button>
       </div>
       <div id="any-list"></div>
+    </div>
+
+    <!-- カスタム耐久 -->
+    <div class="page" id="page-durability">
+      <div id="durability-list"></div>
+      <button class="add-counter-btn" style="margin-bottom:20px" onclick="addDurability()">＋ 耐久を追加</button>
     </div>
 
     <!-- 企画ガチャ -->
@@ -540,6 +574,7 @@ const state={
   darkItems:{N:[],R:[],SR:[],SSR:[],UR:[]},
   darkRates:{N:70,R:20,SR:7,SSR:2,UR:1},
   darkHistory:[],
+  durability:[],
 };
 
 // ===== SANITIZE (XSS対策) =====
@@ -594,6 +629,7 @@ const TABS=[
   {id:'mbti',label:'MBTI',icon:'🧠'},
   {id:'gift',label:'ギフト',icon:'🎁'},
   {id:'counter',label:'カウンター',icon:'🚪'},
+  {id:'durability',label:'耐久',icon:'📋'},
   {id:'gacha',label:'企画ガチャ',icon:'🎲'},
   {id:'dark',label:'闇ガチャ',icon:'🌑'},
 ];
@@ -934,7 +970,7 @@ function doGacha(){
   const card=document.getElementById('gacha-history-card');
   const list=document.getElementById('history-list');
   card.style.display='block';
-  list.innerHTML=state.gachaHistory.slice(0,20).map((h,i)=>`<div class="hist-item"><span>${h}</span><span class="hist-num">#${state.gachaHistory.length-i}</span></div>`).join('');
+  list.innerHTML=state.gachaHistory.slice(0,20).map((h,i)=>`<div class="hist-item"><span>${esc(h)}</span><span class="hist-num">#${state.gachaHistory.length-i}</span></div>`).join('');
 }
 
 // ===== GACHA HISTORY CLEAR =====
@@ -1270,6 +1306,95 @@ function clearDarkHistory(){
   });
 }
 
+// ===== DURABILITY =====
+let durIdSeq=0;
+function addDurability(title=''){
+  const id=++durIdSeq;
+  state.durability.push({id,title:title||`耐久${id}`,items:[]});
+  renderDurabilityList();
+}
+function removeDurability(id){
+  showConfirm('この耐久を削除しますか？',()=>{
+    state.durability=state.durability.filter(d=>d.id!==id);
+    renderDurabilityList();
+  });
+}
+let durItemIdSeq=0;
+function addDurItem(durId){
+  const d=state.durability.find(d=>d.id===durId);
+  if(!d)return;
+  const inp=document.getElementById(`dur-add-input-${durId}`);
+  const val=inp?inp.value.trim():'';
+  if(!val)return;
+  d.items.push({id:++durItemIdSeq,label:val,checked:false});
+  inp.value='';
+  renderDurabilityList();
+}
+function addDurItemOnEnter(e,durId){
+  if(e.key==='Enter')addDurItem(durId);
+}
+function toggleDurItem(durId,itemId){
+  const d=state.durability.find(d=>d.id===durId);
+  if(!d)return;
+  const item=d.items.find(i=>i.id===itemId);
+  if(!item)return;
+  item.checked=!item.checked;
+  renderDurabilityList();
+  // 全チェック時に紙吹雪
+  if(d.items.length>0&&d.items.every(i=>i.checked))celebrate();
+}
+function removeDurItem(durId,itemId){
+  const d=state.durability.find(d=>d.id===durId);
+  if(!d)return;
+  d.items=d.items.filter(i=>i.id!==itemId);
+  renderDurabilityList();
+}
+function resetDurability(id){
+  const d=state.durability.find(d=>d.id===id);
+  if(!d)return;
+  showConfirm('この耐久のチェックをリセットしますか？',()=>{
+    d.items.forEach(i=>i.checked=false);
+    renderDurabilityList();
+  });
+}
+function renderDurabilityList(){
+  const wrap=document.getElementById('durability-list');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  state.durability.forEach(d=>{
+    const total=d.items.length;
+    const done=d.items.filter(i=>i.checked).length;
+    const pct=total?done/total*100:0;
+    const card=document.createElement('div');
+    card.className='dur-card';
+    const itemsHtml=d.items.map(item=>`
+      <div class="dur-item${item.checked?' checked':''}" onclick="toggleDurItem(${d.id},${item.id})">
+        <div class="cb">${item.checked?'✓':''}</div>
+        <div class="dur-item-label">${esc(item.label)}</div>
+        <button class="dur-item-del" onclick="(function(e){e.stopPropagation();removeDurItem(${d.id},${item.id})})(event)">✕</button>
+      </div>`).join('');
+    const doneHtml=total>0&&done===total?'<span class="done-badge">🎉 コンプリート！</span>':'';
+    card.innerHTML=`
+      <div class="dur-head">
+        <input class="dur-title-input" type="text" value="${esc(d.title)}" placeholder="耐久名を入力" oninput="state.durability.find(x=>x.id===${d.id}).title=this.value">
+        <button class="dur-reset-btn" onclick="resetDurability(${d.id})">リセット</button>
+        <button class="dur-del-btn" onclick="removeDurability(${d.id})">✕</button>
+      </div>
+      <div class="dur-prog-row">
+        <div class="dur-prog-text${done===total&&total>0?' done':''}"><span>${done}</span> / ${total}</div>
+        ${doneHtml}
+      </div>
+      <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
+      <div class="dur-items">${itemsHtml}</div>
+      <div class="dur-add-row">
+        <input class="dur-add-input" type="text" id="dur-add-input-${d.id}" placeholder="項目を追加…" onkeydown="addDurItemOnEnter(event,${d.id})">
+        <button class="dur-add-btn" onclick="addDurItem(${d.id})">追加</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
 // ===== INIT =====
 buildPresets();
 initTabs();
@@ -1279,6 +1404,7 @@ buildMBTI();
 rebuildGifts();
 addCounter('入室耐久',100);
 buildDarkSettings();
+renderDurabilityList();
 switchTab('pref');
 </script>
 </body>
