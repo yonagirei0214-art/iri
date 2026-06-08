@@ -258,6 +258,13 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 .dur-reset-btn{background:var(--ac-light);border:2px solid var(--border);color:var(--ac-dark);padding:6px 10px;border-radius:10px;font-size:11px;font-weight:900;cursor:pointer;font-family:inherit}
 .dur-reset-btn:active{transform:scale(.93)}
 
+/* ===== ROULETTE ===== */
+.roulette-item-row{display:flex;align-items:center;gap:8px}
+.roulette-item-input{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:14px;font-weight:700;padding:9px 12px;outline:none;transition:border-color .16s}
+.roulette-item-input:focus{border-color:var(--ac)}
+.roulette-item-del{background:#fff0f2;border:2px solid #ffd0d6;border-radius:10px;color:var(--red);font-family:inherit;font-size:13px;font-weight:900;padding:7px 11px;cursor:pointer;flex-shrink:0}
+.roulette-item-del:active{transform:scale(.92)}
+
 
 .dark-rarity-block{background:var(--bg);border:2px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px}
 .dark-rarity-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
@@ -275,7 +282,8 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 .dark-result-rarity{font-family:'Nunito',sans-serif;font-weight:900;font-size:11px;padding:2px 8px;border-radius:10px;color:white;margin-bottom:2px}
 .dark-result-name{font-size:12px;font-weight:900;line-height:1.2;word-break:break-all}
 .dark-result-count{font-family:'Nunito',sans-serif;font-weight:900;font-size:11px;color:var(--ac-dark);background:var(--ac-light);border-radius:8px;padding:1px 7px}
-.dark-hist-item{background:var(--bg);border-radius:10px;padding:8px 11px;margin-bottom:6px;font-size:12px;font-weight:700}
+.dark-tweet-btn{background:linear-gradient(135deg,#1da1f2,#0d8fd6);border:none;border-radius:10px;color:white;font-family:inherit;font-size:11px;font-weight:900;padding:5px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.dark-tweet-btn:active{transform:scale(.93)}
 .dark-hist-meta{display:flex;justify-content:space-between;margin-bottom:5px;font-size:10px;color:var(--text2);font-weight:900}
 .dark-hist-tags{display:flex;flex-wrap:wrap;gap:4px}
 .dark-hist-tag{font-size:11px;font-weight:900;padding:2px 8px;border-radius:8px;color:white}
@@ -454,6 +462,14 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
           <div style="margin-top:10px;font-size:11px;font-weight:900;color:var(--text2)" id="dark-rate-warn"></div>
         </div>
 
+        <!-- リスナー名入力 -->
+        <div class="card" style="padding:12px 14px">
+          <div class="card-label">👤 リスナー名</div>
+          <input type="text" id="dark-listener-name" placeholder="例：○○さん" style="width:100%;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:15px;font-weight:900;padding:11px 13px;outline:none;transition:border-color .16s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--border)'">
+          <div class="card-label" style="margin-top:10px">🔗 返信先ツイートURL（空欄なら通常ツイート）</div>
+          <input type="text" id="dark-reply-url" placeholder="https://x.com/user/status/123..." style="width:100%;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:13px;font-weight:700;padding:11px 13px;outline:none;transition:border-color .16s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+
         <!-- 回数ボタン -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <button class="gacha-btn" style="padding:14px;font-size:15px" onclick="doDarkGacha(1)">🌑 1回引く</button>
@@ -468,7 +484,10 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
         <div class="card" id="dark-result-card" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div class="card-label" style="margin-bottom:0">✨ 結果</div>
-            <div id="dark-result-summary" style="font-size:11px;font-weight:900;color:var(--text2)"></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div id="dark-result-summary" style="font-size:11px;font-weight:900;color:var(--text2)"></div>
+              <button class="dark-tweet-btn" id="dark-result-tweet-btn" onclick="tweetDarkResult(-1)">🐦 ツイート</button>
+            </div>
           </div>
           <div id="dark-result-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px"></div>
         </div>
@@ -480,6 +499,42 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
             <button class="reset-btn" onclick="clearDarkHistory()">履歴クリア</button>
           </div>
           <div id="dark-history-list"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ルーレット -->
+    <div class="page" id="page-roulette">
+      <div class="gacha-wrap">
+
+        <!-- 項目設定 -->
+        <div class="card">
+          <div class="card-label">📝 項目設定</div>
+          <div id="roulette-items-wrap" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+          <div style="display:flex;gap:8px">
+            <button class="add-counter-btn" style="margin-bottom:0;flex:1" onclick="addRouletteItem()">＋ 項目を追加</button>
+            <button class="reset-btn" onclick="resetRouletteItems()">リセット</button>
+          </div>
+        </div>
+
+        <!-- キャンバス -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="position:relative;display:inline-block">
+            <canvas id="roulette-canvas" width="300" height="300" style="border-radius:50%;display:block;max-width:calc(100vw - 80px);height:auto"></canvas>
+            <!-- 矢印 -->
+            <div style="position:absolute;top:50%;right:-22px;transform:translateY(-50%);font-size:26px;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.3))">▶</div>
+          </div>
+          <button class="gacha-btn" id="roulette-spin-btn" style="width:100%;padding:16px;font-size:17px" onclick="spinRoulette()">🎡 スピン！</button>
+        </div>
+
+        <!-- 結果 -->
+        <div class="card" id="roulette-result-card" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="card-label" style="margin-bottom:0">🎉 結果</div>
+            <button class="dark-tweet-btn" onclick="tweetRouletteResult()">🐦 ツイート</button>
+          </div>
+          <div id="roulette-result-text" style="font-size:26px;font-weight:900;text-align:center;padding:14px 0;color:var(--ac)"></div>
         </div>
 
       </div>
@@ -632,6 +687,7 @@ const TABS=[
   {id:'durability',label:'耐久',icon:'📋'},
   {id:'gacha',label:'企画ガチャ',icon:'🎲'},
   {id:'dark',label:'闇ガチャ',icon:'🌑'},
+  {id:'roulette',label:'ルーレット',icon:'🎡'},
 ];
 function initTabs(){
   const tc=document.getElementById('tabs');
@@ -1288,11 +1344,15 @@ function doDarkGacha(n){
     grid.appendChild(card);
   });
   // add to history
+  const listenerName=(document.getElementById('dark-listener-name')?.value.trim())||'';
   const histCard=document.getElementById('dark-history-card');
   const histList=document.getElementById('dark-history-list');
   histCard.style.display='block';
-  state.darkHistory.unshift({n,results:sorted,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})});
-  histList.innerHTML=state.darkHistory.slice(0,10).map(h=>`<div class="dark-hist-item"><div class="dark-hist-meta"><span>${h.time}</span><span>${h.n}回</span></div><div class="dark-hist-tags">${h.results.map(r=>`<span class="dark-hist-tag" style="background:${DARK_RARITY_COLORS[r.rar]}">${esc(r.item)}${r.count>1?`×${r.count}`:''}</span>`).join('')}</div></div>`).join('');
+  state.darkHistory.unshift({n,results:sorted,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),name:listenerName});
+  // 現在の結果カードのツイートボタンにindex=0をセット
+  const rBtn=document.getElementById('dark-result-tweet-btn');
+  if(rBtn)rBtn.onclick=()=>tweetDarkResult(0);
+  histList.innerHTML=state.darkHistory.slice(0,10).map((h,idx)=>`<div class="dark-hist-item"><div class="dark-hist-meta"><span>${h.name?esc(h.name)+' · ':''}<span style="font-weight:900;color:var(--text)">${h.n}連</span></span><div style="display:flex;align-items:center;gap:6px"><span>${h.time}</span><button class="dark-tweet-btn" onclick="tweetDarkResult(${idx})">🐦</button></div></div><div class="dark-hist-tags">${h.results.map(r=>`<span class="dark-hist-tag" style="background:${DARK_RARITY_COLORS[r.rar]}">${esc(r.item)}${r.count>1?`×${r.count}`:''}</span>`).join('')}</div></div>`).join('');
 }
 function doDarkGachaCustom(){
   const n=parseInt(document.getElementById('dark-custom-num').value)||1;
@@ -1304,6 +1364,26 @@ function clearDarkHistory(){
     document.getElementById('dark-history-card').style.display='none';
     document.getElementById('dark-result-card').style.display='none';
   });
+}
+function tweetDarkResult(idx){
+  const h=state.darkHistory[idx];
+  if(!h)return;
+  const lines=[];
+  if(h.name)lines.push(h.name);
+  lines.push(`闇ガチャ${h.n}連`);
+  lines.push('');
+  h.results.forEach(r=>{
+    const label=r.rar.toLowerCase();
+    const count=r.count>1?` ×${r.count}`:'';
+    lines.push(`${label} ${r.item}${count}`);
+  });
+  const text=lines.join('\n');
+  const replyUrl=document.getElementById('dark-reply-url')?.value.trim()||'';
+  const match=replyUrl.match(/status\/(\d+)/);
+  const replyId=match?match[1]:'';
+  let url='https://twitter.com/intent/tweet?text='+encodeURIComponent(text);
+  if(replyId)url+='&in_reply_to='+replyId;
+  window.open(url,'_blank');
 }
 
 // ===== DURABILITY =====
@@ -1395,7 +1475,137 @@ function renderDurabilityList(){
   });
 }
 
-// ===== INIT =====
+// ===== ROULETTE =====
+const ROULETTE_COLORS=['#4ecde6','#ff6eb4','#a06aff','#3dcc7a','#ff8c42','#ffca3a','#ff5c6a','#5b9fff','#e060c0','#00b894','#fd79a8','#6c5ce7'];
+let rouletteItems=['項目1','項目2','項目3'];
+let rouletteSpinning=false;
+let rouletteAngle=0;
+let rouletteResult='';
+
+function renderRouletteItemInputs(){
+  const wrap=document.getElementById('roulette-items-wrap');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  rouletteItems.forEach((item,i)=>{
+    const row=document.createElement('div');
+    row.className='roulette-item-row';
+    row.innerHTML=`<input class="roulette-item-input" type="text" value="${esc(item)}" placeholder="項目${i+1}" oninput="rouletteItems[${i}]=this.value;drawRouletteWheel()"><button class="roulette-item-del" onclick="removeRouletteItem(${i})">✕</button>`;
+    wrap.appendChild(row);
+  });
+  drawRouletteWheel();
+}
+function addRouletteItem(){
+  rouletteItems.push(`項目${rouletteItems.length+1}`);
+  renderRouletteItemInputs();
+}
+function removeRouletteItem(i){
+  if(rouletteItems.length<=2)return;
+  rouletteItems.splice(i,1);
+  renderRouletteItemInputs();
+}
+function resetRouletteItems(){
+  showConfirm('項目をリセットしますか？',()=>{
+    rouletteItems=['項目1','項目2','項目3'];
+    renderRouletteItemInputs();
+    document.getElementById('roulette-result-card').style.display='none';
+  });
+}
+function drawRouletteWheel(highlightIdx=-1){
+  const canvas=document.getElementById('roulette-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const cx=W/2, cy=H/2, r=W/2-4;
+  const items=rouletteItems.filter(s=>s.trim());
+  if(!items.length)return;
+  const n=items.length;
+  const slice=(2*Math.PI)/n;
+  ctx.clearRect(0,0,W,H);
+  items.forEach((item,i)=>{
+    const start=rouletteAngle+i*slice;
+    const end=start+slice;
+    const col=ROULETTE_COLORS[i%ROULETTE_COLORS.length];
+    // セクター
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,end);
+    ctx.closePath();
+    ctx.fillStyle=i===highlightIdx?'#fffde7':col;
+    ctx.fill();
+    ctx.strokeStyle='white';
+    ctx.lineWidth=2;
+    ctx.stroke();
+    // テキスト
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(start+slice/2);
+    ctx.textAlign='right';
+    ctx.fillStyle='white';
+    ctx.font=`bold ${Math.min(14,200/n+4)}px 'M PLUS Rounded 1c',sans-serif`;
+    ctx.shadowColor='rgba(0,0,0,.35)';
+    ctx.shadowBlur=3;
+    const label=item.length>8?item.slice(0,7)+'…':item;
+    ctx.fillText(label,r-10,4);
+    ctx.restore();
+  });
+  // 中心円
+  ctx.beginPath();
+  ctx.arc(cx,cy,18,0,2*Math.PI);
+  ctx.fillStyle='white';
+  ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.1)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+}
+function spinRoulette(){
+  if(rouletteSpinning)return;
+  const items=rouletteItems.filter(s=>s.trim());
+  if(items.length<2)return;
+  rouletteSpinning=true;
+  document.getElementById('roulette-spin-btn').disabled=true;
+  document.getElementById('roulette-result-card').style.display='none';
+  const extraSpins=5+Math.floor(Math.random()*5); // 5〜9周
+  const n=items.length;
+  const slice=(2*Math.PI)/n;
+  // 当選インデックスをランダムに決定
+  const winIdx=Math.floor(Math.random()*n);
+  // 矢印は右(canvas 0rad=3時方向)を指す
+  // winIdxセクター中心が0radに来る条件: rouletteAngle + winIdx*slice + slice/2 ≡ 0
+  // → finalAngle = -(winIdx*slice + slice/2)
+  const finalAngle=-(winIdx*slice+slice/2);
+  const startAngle=rouletteAngle%(2*Math.PI);
+  let totalDelta=finalAngle-startAngle+2*Math.PI*extraSpins;
+  if(totalDelta<2*Math.PI)totalDelta+=2*Math.PI; // 最则1周は保証
+  const duration=4000+Math.random()*1000;
+  const startTime=performance.now();
+  function easeOut(t){return 1-Math.pow(1-t,4);}
+  function frame(now){
+    const t=Math.min((now-startTime)/duration,1);
+    rouletteAngle=startAngle+totalDelta*easeOut(t);
+    drawRouletteWheel();
+    if(t<1){requestAnimationFrame(frame);}
+    else{
+      rouletteAngle=rouletteAngle%(2*Math.PI);
+      drawRouletteWheel(winIdx);
+      rouletteResult=items[winIdx];
+      const rc=document.getElementById('roulette-result-card');
+      const rt=document.getElementById('roulette-result-text');
+      rc.style.display='block';
+      rt.textContent=rouletteResult;
+      rouletteSpinning=false;
+      document.getElementById('roulette-spin-btn').disabled=false;
+      celebrate();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+function tweetRouletteResult(){
+  if(!rouletteResult)return;
+  const text=`ルーレット結果：${rouletteResult}`;
+  window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank');
+}
+
+
 buildPresets();
 initTabs();
 buildPref();
@@ -1405,6 +1615,7 @@ rebuildGifts();
 addCounter('入室耐久',100);
 buildDarkSettings();
 renderDurabilityList();
+renderRouletteItemInputs();
 switchTab('pref');
 </script>
 </body>
