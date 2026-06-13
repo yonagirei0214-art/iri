@@ -220,6 +220,26 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
+/* ===== SAVE BUTTON ===== */
+.save-btn{background:linear-gradient(135deg,var(--ac),var(--ac-dark));border:none;color:white;padding:5px 10px;border-radius:16px;font-size:11px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:4px;transition:all .15s;box-shadow:0 2px 8px rgba(78,205,230,.3)}
+.save-btn:active{transform:scale(.93)}
+.save-btn.saving{opacity:.7;pointer-events:none}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a42;color:white;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:900;padding:11px 20px;border-radius:20px;z-index:9998;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== SAVE TIME LABEL ===== */
+.save-time-label{font-size:10px;font-weight:900;color:var(--text2);text-align:right;margin-top:4px}
+
+/* ===== DARK GACHA CSV EXPORT ===== */
+.dark-csv-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0}
+.dark-csv-btn{background:linear-gradient(135deg,var(--ac),var(--ac-dark));border:none;color:white;padding:10px 18px;border-radius:14px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:all .15s;box-shadow:0 2px 8px rgba(78,205,230,.25)}
+.dark-csv-btn:active{transform:scale(.93)}
+.dark-csv-clear-btn{background:#fff0f2;border:2px solid #ffd0d6;color:var(--red);padding:10px 14px;border-radius:14px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.dark-csv-clear-btn:active{transform:scale(.93)}
+.dark-csv-count{font-size:11px;font-weight:900;color:var(--text2);margin-left:2px}
+
 /* ===== TWEET CATEGORY CHECKS ===== */
 .tweet-cat-check{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:5px 9px;cursor:pointer;font-size:11px;font-weight:900;color:var(--text2);transition:all .14s;user-select:none}
 .tweet-cat-check.on{background:var(--ac-light);border-color:var(--ac);color:var(--ac-dark)}
@@ -335,12 +355,17 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
   <div class="header-top">
     <div class="logo">🎙 配信補助ツール</div>
     <div class="header-right">
+      <button class="save-btn" id="save-btn" onclick="saveAll()">💾 保存</button>
       <button class="tweet-btn" onclick="openTweetModal()">🐦 ツイート</button>
       <button class="color-btn" onclick="openColorModal()">🎨 カラー</button>
     </div>
   </div>
+  <div id="save-time-bar" class="save-time-label" style="display:none;padding-bottom:4px"></div>
   <div class="tabs" id="tabs"></div>
 </header>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <div class="layout">
   <div class="sidebar" id="sidebar"></div>
@@ -501,6 +526,24 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
           <div id="dark-history-list"></div>
         </div>
 
+        <!-- CSV出力 -->
+        <div class="card" id="dark-csv-card">
+          <div class="card-label">📥 CSV出力（振り分けツール用）</div>
+          <p style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;line-height:1.6">ガチャを引くたびに自動で記録されます。配信終わりにCSV出力→振り分けツールBへ。</p>
+          <div class="dark-csv-bar">
+            <button class="dark-csv-btn" onclick="exportDarkCSV()">📥 CSV出力</button>
+            <button class="dark-csv-clear-btn" onclick="clearDarkCSVLog()">🗑 記録リセット</button>
+            <span class="dark-csv-count" id="dark-csv-count">0件記録済み</span>
+          </div>
+        </div>
+
+        <!-- 振り分けツールへのリンク -->
+        <div class="card" id="dark-distributor-card">
+          <div class="card-label">🔗 景品振り分けツール</div>
+          <p style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:12px;line-height:1.6">CSVを出力したら、振り分けツールで景品をリスナーごとにまとめてDLできます。</p>
+          <a href="https://yonagirei0214-art.github.io/yami/" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,var(--ac),var(--ac-dark));color:#fff;text-decoration:none;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:900;letter-spacing:.04em;box-shadow:0 2px 12px rgba(78,205,230,.2);transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🎁 景品振り分けツールを開く</a>
+        </div>
+
       </div>
     </div>
 
@@ -629,6 +672,7 @@ const state={
   darkItems:{N:[],R:[],SR:[],SSR:[],UR:[]},
   darkRates:{N:70,R:20,SR:7,SSR:2,UR:1},
   darkHistory:[],
+  darkCSVLog:[],  // { listener, rarity, gift } の累積ログ
   durability:[],
 };
 
@@ -1349,6 +1393,12 @@ function doDarkGacha(n){
   const histList=document.getElementById('dark-history-list');
   histCard.style.display='block';
   state.darkHistory.unshift({n,results:sorted,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),name:listenerName});
+
+  // CSVログに追記（1件ずつ展開して蓄積、×N個は個別に記録）
+  results.forEach(({rar,item})=>{
+    state.darkCSVLog.push({listener:listenerName||'名無し',rarity:rar,gift:item});
+  });
+  updateDarkCSVCount();
   // 現在の結果カードのツイートボタンにindex=0をセット
   const rBtn=document.getElementById('dark-result-tweet-btn');
   if(rBtn)rBtn.onclick=()=>tweetDarkResult(0);
@@ -1363,6 +1413,44 @@ function clearDarkHistory(){
     state.darkHistory=[];
     document.getElementById('dark-history-card').style.display='none';
     document.getElementById('dark-result-card').style.display='none';
+  });
+}
+
+// ===== DARK GACHA CSV =====
+function updateDarkCSVCount(){
+  const el=document.getElementById('dark-csv-count');
+  if(el)el.textContent=`${state.darkCSVLog.length}件記録済み`;
+}
+function exportDarkCSV(){
+  if(state.darkCSVLog.length===0){
+    showToast('⚠️ まだガチャ結果がありません');
+    return;
+  }
+  const escCSV=v=>{
+    const s=String(v);
+    return /[,\n"]/.test(s)?`"${s.replace(/"/g,'""')}"`  :s;
+  };
+  const header='リスナー名,レアリティ,景品名\n';
+  const rows=state.darkCSVLog.map(r=>[escCSV(r.listener),escCSV(r.rarity),escCSV(r.gift)].join(',')).join('\n');
+  const csv='\uFEFF'+header+rows;
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  const now=new Date();
+  const d=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  a.download=`闇ガチャ結果_${d}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+  showToast('📥 CSVをダウンロードしました！');
+}
+function clearDarkCSVLog(){
+  showConfirm('CSVの記録をリセットしますか？\n（ガチャ履歴はそのまま残ります）',()=>{
+    state.darkCSVLog=[];
+    updateDarkCSVCount();
+    showToast('🗑 記録をリセットしました');
   });
 }
 function tweetDarkResult(idx){
@@ -1606,16 +1694,189 @@ function tweetRouletteResult(){
 }
 
 
+// ===== LOCAL STORAGE SAVE / LOAD =====
+const SAVE_KEY='iriam_tool_v1';
+
+function saveAll(){
+  const btn=document.getElementById('save-btn');
+  if(btn){btn.classList.add('saving');btn.textContent='💾 保存中…';}
+
+  // Set→Arrayに変換してシリアライズ
+  const payload={
+    version:1,
+    savedAt:Date.now(),
+    pref:[...state.pref],
+    star:[...state.star],
+    mbti:[...state.mbti],
+    gift:Object.fromEntries(Object.entries(state.gift).map(([k,v])=>[k,[...v]])),
+    petitGift:Object.fromEntries(Object.entries(state.petitGift).map(([k,v])=>[k,[...v]])),
+    giftMode:state.giftMode,
+    counters:state.counters.map(c=>({...c})),
+    counterIdSeq,
+    anyIdSeq,
+    gachaHistory:[...state.gachaHistory],
+    darkItems:JSON.parse(JSON.stringify(state.darkItems)),
+    darkRates:JSON.parse(JSON.stringify(state.darkRates)),
+    darkHistory:state.darkHistory.slice(0,20),
+    darkCSVLog:state.darkCSVLog.slice(0,5000),
+    durability:JSON.parse(JSON.stringify(state.durability)),
+    durIdSeq,
+    durItemIdSeq,
+    rouletteItems:[...rouletteItems],
+    rouletteAngle,
+    accentColor:getComputedStyle(document.documentElement).getPropertyValue('--ac').trim(),
+    tweetCatState:{...tweetCatState},
+    hashtag:(document.getElementById('tweet-hashtag')?.value||''),
+  };
+
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify(payload));
+    showSaveTime(payload.savedAt);
+    showToast('💾 保存しました！');
+  }catch(e){
+    showToast('⚠️ 保存に失敗しました（容量不足の可能性）');
+  }
+
+  setTimeout(()=>{
+    if(btn){btn.classList.remove('saving');btn.textContent='💾 保存';}
+  },600);
+}
+
+function loadAll(){
+  let raw;
+  try{raw=localStorage.getItem(SAVE_KEY);}catch(e){return;}
+  if(!raw)return;
+  let d;
+  try{d=JSON.parse(raw);}catch(e){return;}
+  if(!d||d.version!==1)return;
+
+  // 基本セット
+  state.pref=new Set(d.pref||[]);
+  state.star=new Set(d.star||[]);
+  state.mbti=new Set(d.mbti||[]);
+
+  // ギフト
+  if(d.gift){
+    Object.keys(state.gift).forEach(k=>{
+      state.gift[k]=new Set(d.gift[k]||[]);
+    });
+  }
+  if(d.petitGift){
+    Object.keys(state.petitGift).forEach(k=>{
+      state.petitGift[k]=new Set(d.petitGift[k]||[]);
+    });
+  }
+  if(d.giftMode)state.giftMode=d.giftMode;
+
+  // カウンター
+  if(d.counters){
+    state.counters=d.counters.map(c=>({...c}));
+    counterIdSeq=d.counterIdSeq||state.counters.reduce((m,c)=>Math.max(m,c.id),0);
+  }
+
+  // ガチャ履歴
+  if(d.gachaHistory)state.gachaHistory=[...d.gachaHistory];
+
+  // 闇ガチャ
+  if(d.darkItems){
+    Object.keys(state.darkItems).forEach(k=>{
+      if(d.darkItems[k])state.darkItems[k]=[...d.darkItems[k]];
+    });
+  }
+  if(d.darkRates){
+    Object.keys(state.darkRates).forEach(k=>{
+      if(d.darkRates[k]!==undefined)state.darkRates[k]=d.darkRates[k];
+    });
+  }
+  if(d.darkHistory)state.darkHistory=[...d.darkHistory];
+
+  // CSVログ復元
+  if(d.darkCSVLog)state.darkCSVLog=[...d.darkCSVLog];
+
+  // 耐久
+  if(d.durability){
+    state.durability=JSON.parse(JSON.stringify(d.durability));
+    durIdSeq=d.durIdSeq||state.durability.reduce((m,d)=>Math.max(m,d.id),0);
+    durItemIdSeq=d.durItemIdSeq||0;
+  }
+
+  // ルーレット
+  if(d.rouletteItems)rouletteItems=[...d.rouletteItems];
+  if(d.rouletteAngle!=null)rouletteAngle=d.rouletteAngle;
+
+  // アクセントカラー
+  if(d.accentColor)applyColor(d.accentColor);
+
+  // ツイートカテゴリ
+  if(d.tweetCatState){
+    Object.assign(tweetCatState,d.tweetCatState);
+  }
+
+  if(d.savedAt)showSaveTime(d.savedAt);
+}
+
+function showSaveTime(ts){
+  const bar=document.getElementById('save-time-bar');
+  if(!bar)return;
+  const dt=new Date(ts);
+  const str=dt.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  bar.textContent=`最終保存: ${str}`;
+  bar.style.display='block';
+}
+
+let _toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  if(!t)return;
+  t.textContent=msg;
+  t.classList.add('show');
+  if(_toastTimer)clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
 buildPresets();
 initTabs();
+
+// ===== INIT: ローカルストレージから復元してからUI構築 =====
+loadAll(); // state/rouletteItems/rouletteAngleをここで上書き
+
 buildPref();
 buildStar();
 buildMBTI();
-rebuildGifts();
-addCounter('入室耐久',100);
+
+// ギフト: 保存されたモードで構築
+if(state.giftMode==='petit') rebuildPetitGifts();
+else rebuildGifts();
+
+// カウンター: 保存済みデータがある場合はそれを使用、無い場合はデフォルト追加
+if(state.counters.length===0) addCounter('入室耐久',100);
+else renderCounterList();
+
 buildDarkSettings();
 renderDurabilityList();
 renderRouletteItemInputs();
+updateDarkCSVCount();
+
+// ガチャ履歴を復元表示
+if(state.gachaHistory.length>0){
+  const card=document.getElementById('gacha-history-card');
+  const list=document.getElementById('history-list');
+  if(card&&list){
+    card.style.display='block';
+    list.innerHTML=state.gachaHistory.slice(0,20).map((h,i)=>`<div class="hist-item"><span>${esc(h)}</span><span class="hist-num">#${state.gachaHistory.length-i}</span></div>`).join('');
+  }
+}
+
+// ハッシュタグを復元
+try{
+  const savedRaw=localStorage.getItem(SAVE_KEY);
+  if(savedRaw){
+    const sd=JSON.parse(savedRaw);
+    const hEl=document.getElementById('tweet-hashtag');
+    if(hEl&&sd.hashtag!=null)hEl.value=sd.hashtag;
+  }
+}catch(e){}
+
 switchTab('pref');
 </script>
 </body>
