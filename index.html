@@ -220,11 +220,6 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
-/* ===== SAVE BUTTON ===== */
-.save-btn{background:linear-gradient(135deg,var(--ac),var(--ac-dark));border:none;color:white;padding:5px 10px;border-radius:16px;font-size:11px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:4px;transition:all .15s;box-shadow:0 2px 8px rgba(78,205,230,.3)}
-.save-btn:active{transform:scale(.93)}
-.save-btn.saving{opacity:.7;pointer-events:none}
-
 /* ===== TOAST ===== */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a42;color:white;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:900;padding:11px 20px;border-radius:20px;z-index:9998;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,.25)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -287,10 +282,17 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 
 
 .dark-rarity-block{background:var(--bg);border:2px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px}
-.dark-rarity-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.dark-rarity-badge{font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;padding:4px 12px;border-radius:20px;color:white}
+.dark-rarity-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.dark-rarity-badge{font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;padding:4px 12px;border-radius:20px;color:white;white-space:nowrap}
 .dark-rate-input{width:68px;background:var(--white);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;padding:6px 8px;text-align:center;outline:none;transition:border-color .15s}
 .dark-rate-input:focus{border-color:var(--ac)}
+.dark-rarity-key-input{width:72px;background:var(--white);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;padding:6px 8px;text-align:center;outline:none;transition:border-color .15s}
+.dark-rarity-key-input:focus{border-color:var(--ac)}
+.dark-rarity-color-input{width:36px;height:36px;border:2px solid var(--border);border-radius:10px;cursor:pointer;padding:2px;background:none;flex-shrink:0}
+.dark-rarity-del-btn{background:#fff0f2;border:2px solid #ffd0d6;border-radius:10px;color:var(--red);font-family:inherit;font-size:11px;font-weight:900;padding:5px 9px;cursor:pointer;white-space:nowrap;margin-left:auto}
+.dark-rarity-del-btn:active{transform:scale(.92)}
+.dark-add-rarity-btn{width:100%;padding:12px;border-radius:14px;border:2px dashed var(--border);background:var(--white);color:var(--ac-dark);font-family:'Nunito',sans-serif;font-weight:900;font-size:14px;cursor:pointer;transition:all .16s;margin-top:6px}
+.dark-add-rarity-btn:active{transform:scale(.97)}
 .dark-rate-label{font-size:12px;font-weight:900;color:var(--text2)}
 .dark-items-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .dark-item-wrap{display:flex;align-items:center;gap:4px}
@@ -304,6 +306,8 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 .dark-result-count{font-family:'Nunito',sans-serif;font-weight:900;font-size:11px;color:var(--ac-dark);background:var(--ac-light);border-radius:8px;padding:1px 7px}
 .dark-tweet-btn{background:linear-gradient(135deg,#1da1f2,#0d8fd6);border:none;border-radius:10px;color:white;font-family:inherit;font-size:11px;font-weight:900;padding:5px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .dark-tweet-btn:active{transform:scale(.93)}
+.dark-hist-del-btn{background:#fff0f2;border:1px solid #ffd0d6;border-radius:8px;color:var(--red);font-family:inherit;font-size:11px;font-weight:900;padding:4px 7px;cursor:pointer;flex-shrink:0}
+.dark-hist-del-btn:active{transform:scale(.93)}
 .dark-hist-meta{display:flex;justify-content:space-between;margin-bottom:5px;font-size:10px;color:var(--text2);font-weight:900}
 .dark-hist-tags{display:flex;flex-wrap:wrap;gap:4px}
 .dark-hist-tag{font-size:11px;font-weight:900;padding:2px 8px;border-radius:8px;color:white}
@@ -355,7 +359,6 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
   <div class="header-top">
     <div class="logo">🎙 配信補助ツール</div>
     <div class="header-right">
-      <button class="save-btn" id="save-btn" onclick="saveAll()">💾 保存</button>
       <button class="tweet-btn" onclick="openTweetModal()">🐦 ツイート</button>
       <button class="color-btn" onclick="openColorModal()">🎨 カラー</button>
     </div>
@@ -608,7 +611,7 @@ const MBTI_LIST=[
 ];
 
 const GIFTS={
-  'ネタ':{color:'#ff6eb4',bg:'#fff0f8',items:['もういっかい！','ダウト','ざわざわ','炎','非常口','いつもので','かー','つー','一体感','乗りなッ！','乗りろ…','しーっ','はて…？','やれやれ','ぱぁ。','完全燃焼','激熱','まぶしい','世界一','祭うちわ','ええやん','最強','スリスリ','厨二病','拳','ふぅー!!','そんなバナナ','メシウマ','アニキー！','仰せのままに','漢','鉄アレイ','しおしお','ヒャッホー！','あざとい','おもしれーやつ','沼','鳥肌注意','すやぁ…','やりおる','あとは頼んだ','おねぎします。','まかセロリ','ドヤッ','ふりむ','ご乱心','コッ☆','ダジャレ警察','プチ岐阜','逆にね','もやし','ンジャメナ','話題こか？','ほこり','チャージっ！','ひんやりタイム','アヂッ','…つむっ！','からの〜？','へぇ','黒歴史','フラグ','画伯降臨','平成','昭和','江戸','おかん','ツンデレダイス','しらすまん','ダウト','爆弾','カチコチ','蝋燭','どーなっちゃうの','お掃除','令和','タイムセール','嫁に来ないかそういうことだぞ','ん…？','配信者発見','集中線','警察だ!!','パイ投げ','たらい落とし','しらすレインボー','ギガブルーム','まだ大丈夫','気配感知','REC','宝箱','あちらのお客様からです','おばけしらす','オール']},
+  'ネタ':{color:'#ff6eb4',bg:'#fff0f8',items:['もういっかい！','ダウト','ざわざわ','炎','非常口','いつもので','かー','つー','一体感','乗りなッ！','乗りろ…','しーっ','はて…？','やれやれ','ぱぁ。','完全燃焼','激熱','まぶしい','世界一','祭うちわ','ええやん','最強','スリスリ','厨二病','拳','ふぅー!!','そんなバナナ','メシウマ','アニキー！','仰せのままに','漢','鉄アレイ','しおしお','ヒャッホー！','あざとい','おもしれーやつ','沼','鳥肌注意','すやぁ…','やりおる','あとは頼んだ','おねぎします。','まかセロリ','ドヤッ','ふりむ','ご乱心','コッ☆','ダジャレ警察','プチ岐阜','逆にね','もやし','ンジャメナ','話題こか？','ほこり','チャージっ！','ひんやりタイム','アヂッ','…つむっ！','からの〜？','へぇ','黒歴史','フラグ','画伯降臨','平成','昭和','江戸','おかん','ツンデレダイス','しらすまん','ダウト','爆弾','カチコチ','蝋燭','どーなっちゃうの','お掃除','令和','タイムセール','嫁に来ないかそういうことだぞ','ん…？','配信者発見','集中線','警察だ!!','パイ投げ','たらい落とし','しらすレインボー','ギガブルーム','まだ大丈夫','気配感知','REC','宝箱','あちらのお客様からです','おばけしらす','オール','罠','むふふ','チラッ','七夕に願いを','誰かなダイス','THE 宇宙']},
   '笑':{color:'#3dcc7a',bg:'#f0fff6',items:['www','草','ドッ','かぷかぷ','こらえ笑い','ブフォッ','微笑','真顔','草(植物)','おもしろー','ガハハ','ズコー','座布団','ビタミン不足','ウケる','またまたぁ','んなアホな','ほんまや','草(大)']},
   '定番':{color:'#5b9fff',bg:'#f0f6ff',items:['うんうん','なるほど','わかる','わからん','爆笑','号泣','考え中','好物','ふ〜ん','・・・','？','！？','ありがとう！','やだ','ダウト','WWW','草','神','キャンディ','炎','握手','ハイ！','助かる','クラッカー','良さそう','クローバー','ドリンク','ぴえん','バラ','いつもので','一体感','ドッ','ごはん','サラダバー','草（植物）','えへへ','うぐぅ…','ガクブル','サァー','ナムナム','ヒェッ','ちょっと','むっちゃ','もっと','休んで！','寝て！','食べて！','充電中','エナジードリンク','拍手','おかわり','満腹','空腹','オサレ','いえーい！(ホシーカ)','ごっつぁんです','じゅるり','きゅるん（ユラミィ）','ごろごろ（ねこころ）','ぺこぺこ（つむまる）','あわわ','しおしお','ぽかぽか','ウケる','ビクッ！？','ファイティン','？？？','ぱぁぁ','ふんふん','ふわふわ','メンタルブレイク','いっくよー！','ぱぁ','ヒソヒソ','ポカーン','閃き','のど飴','シャキーン！','キラキラ','ひんやりタイム','…どれ？','はらたいこ','ぴたんぴたん','わいわい','ノリノリ','ふりふり','草(大)','お茶','えらい','thank you','うれピーマン','クラッカー','バラ(大)','御意','しらすまん','ダウト','怒り','ポジティブ足りてる？','パンケーキ','パンケーキ','パンケーキ','ちょっと待ったああ！','頑張れ','乾杯','エモい','花束','ありがとう','助かる','ん…？','うわぁぁん','ウインクチャレンジ','猫耳チャレンジ','結界','タピオカ','くす玉','予言タイム','覚醒','缶詰(風船)','イリアム特製パフェ','缶詰(花)']},
   'えらい':{color:'#ffca3a',bg:'#fffdf0',items:['キリおめ','ナイギフ','ナイス','かわいい','神','１００点','良さそう','世界一','えぐぐ','すごい','すばら','たのしみ','ええやん','天才か！？','最強','かしこ','はなまる','拍手','エモい','チルい','かっこいい','イケボ','オサレ','クール','アニキーー！','漢','あざとい','おもしれーやつ','かわぼ','癒し〜','耳が幸せ','やりおる','よかろう','えらい','コングラ','happy birthday(ねこころ)','happy birthday(ホシーカ)','クラッカー200Pt','拍手200Pt','エモい','たいへんよくできました','お見事！','くす玉','ケーキ(誕生日)','かわいい！3000Pt','尊い','なでなで','ハッピーバースデー']},
@@ -650,7 +653,7 @@ const PETIT_GIFTS={
     'ほこり','もやし','キタコレ','ンジャメナ',
     'Thank youさばぱん','Thank youしらす','Thank youつむまる','Thank youねこころ',
     'Thank youふくちゃ','Thank youホシーカ','Thank youユラミィ','またまたぁ',
-    'んなアホな','ニヤリ','話聞こか？'
+    'んなアホな','ニヤリ','話聞こか？','罠','むふふ','チラッ'
   ]},
   '10pt':{color:'#3dcc7a',bg:'#f0fff6',items:[
     'シャキーン！','キラキラ','アチッ','...つむっ！',
@@ -669,8 +672,13 @@ const state={
   petitGift:Object.fromEntries(Object.keys(PETIT_GIFTS).map(k=>[k,new Set()])),
   giftMode:'full',
   counters:[], gachaHistory:[],
-  darkItems:{N:[],R:[],SR:[],SSR:[],UR:[]},
-  darkRates:{N:70,R:20,SR:7,SSR:2,UR:1},
+  darkRarities:[
+    {key:'N',  color:'#7a8fa6',rate:70,items:[]},
+    {key:'R',  color:'#3dcc7a',rate:20,items:[]},
+    {key:'SR', color:'#5b9fff',rate:7, items:[]},
+    {key:'SSR',color:'#ff8c42',rate:2, items:[]},
+    {key:'UR', color:'#ff5c6a',rate:1, items:[]},
+  ],
   darkHistory:[],
   darkCSVLog:[],  // { listener, rarity, gift } の累積ログ
   durability:[],
@@ -1281,45 +1289,76 @@ function resetPetitAll(){
 }
 
 // ===== DARK GACHA =====
-const DARK_RARITY_COLORS={N:'#7a8fa6',R:'#3dcc7a',SR:'#5b9fff',SSR:'#ff8c42',UR:'#ff5c6a'};
-const DARK_RARITY_ORDER=['N','R','SR','SSR','UR'];
+function getDarkColor(rarKey){
+  const r=state.darkRarities.find(r=>r.key===rarKey);
+  return r?r.color:'#7a8fa6';
+}
 function buildDarkSettings(){
   const wrap=document.getElementById('dark-rarity-settings');
   wrap.innerHTML='';
-  DARK_RARITY_ORDER.forEach(rar=>{
+  state.darkRarities.forEach((rar,idx)=>{
     const block=document.createElement('div');
     block.className='dark-rarity-block';
-    block.id=`dark-block-${rar}`;
-    const itemsHtml=state.darkItems[rar].map((v,i)=>`<div class="dark-item-wrap"><input class="dark-item-input" type="text" value="${esc(v)}" placeholder="アイテム名" oninput="state.darkItems['${rar}'][${i}]=this.value"><button class="dark-item-del" onclick="removeDarkItem('${rar}',${i})">✕</button></div>`).join('');
-    // Fill up to 5 empty slots if fewer items
-    const empties=Math.max(0,5-state.darkItems[rar].length);
-    const emptyHtml=Array.from({length:empties},(_,j)=>`<div class="dark-item-wrap"><input class="dark-item-input" type="text" placeholder="アイテム名" onblur="addDarkItemInline('${rar}',this)" onkeydown="if(event.key==='Enter'){this.blur()}"></div>`).join('');
-    block.innerHTML=`<div class="dark-rarity-head"><span class="dark-rarity-badge" style="background:${DARK_RARITY_COLORS[rar]}">${rar}</span><span class="dark-rate-label">確率</span><input class="dark-rate-input" type="number" id="dark-rate-${rar}" value="${state.darkRates[rar]}" min="0" max="100" step="0.1" oninput="updateDarkRate('${rar}',this.value)"><span class="dark-rate-label">%</span></div><div class="dark-items-grid" id="dark-items-${rar}">${itemsHtml}${emptyHtml}<button class="dark-add-item-btn" onclick="addDarkItem('${rar}')">＋ 追加</button></div>`;
+    block.id=`dark-block-${idx}`;
+    const itemsHtml=rar.items.map((v,i)=>`<div class="dark-item-wrap"><input class="dark-item-input" type="text" value="${esc(v)}" placeholder="アイテム名" oninput="state.darkRarities[${idx}].items[${i}]=this.value"><button class="dark-item-del" onclick="removeDarkItem(${idx},${i})">✕</button></div>`).join('');
+    const empties=Math.max(0,5-rar.items.length);
+    const emptyHtml=Array.from({length:empties},()=>`<div class="dark-item-wrap"><input class="dark-item-input" type="text" placeholder="アイテム名" onblur="addDarkItemInline(${idx},this)" onkeydown="if(event.key==='Enter'){this.blur()}"></div>`).join('');
+    const canDelete=state.darkRarities.length>1;
+    block.innerHTML=`<div class="dark-rarity-head">
+      <input type="color" class="dark-rarity-color-input" value="${rar.color}" title="カラーを変更"
+        oninput="state.darkRarities[${idx}].color=this.value;document.querySelector('#dark-block-${idx} .dark-rarity-badge').style.background=this.value">
+      <input class="dark-rarity-key-input" type="text" value="${esc(rar.key)}" placeholder="名前" maxlength="8"
+        oninput="state.darkRarities[${idx}].key=this.value;document.querySelector('#dark-block-${idx} .dark-rarity-badge').textContent=this.value">
+      <span class="dark-rarity-badge" style="background:${rar.color}">${esc(rar.key)}</span>
+      <span class="dark-rate-label">確率</span>
+      <input class="dark-rate-input" type="number" id="dark-rate-${idx}" value="${rar.rate}" min="0" max="100" step="0.1" oninput="updateDarkRate(${idx},this.value)">
+      <span class="dark-rate-label">%</span>
+      ${canDelete?`<button class="dark-rarity-del-btn" onclick="removeDarkRarity(${idx})">✕ 削除</button>`:''}
+    </div>
+    <div class="dark-items-grid" id="dark-items-${idx}">${itemsHtml}${emptyHtml}<button class="dark-add-item-btn" onclick="addDarkItem(${idx})">＋ 追加</button></div>`;
     wrap.appendChild(block);
   });
+  // レアリティ追加ボタン
+  const addBtn=document.createElement('button');
+  addBtn.className='dark-add-rarity-btn';
+  addBtn.textContent='＋ レアリティを追加';
+  addBtn.onclick=addDarkRarity;
+  wrap.appendChild(addBtn);
   updateDarkRateWarn();
 }
-function addDarkItemInline(rar,input){
+function addDarkRarity(){
+  const palette=['#ff6eb4','#a06aff','#00b894','#fd79a8','#6c5ce7','#e17055','#74b9ff','#f9ca24','#55efc4','#fdcb6e'];
+  const color=palette[state.darkRarities.length%palette.length];
+  state.darkRarities.push({key:'NEW',color,rate:0,items:[]});
+  buildDarkSettings();
+}
+function removeDarkRarity(idx){
+  if(state.darkRarities.length<=1)return;
+  showConfirm('このレアリティを削除しますか？\n（設定したアイテムも消えます）',()=>{
+    state.darkRarities.splice(idx,1);
+    buildDarkSettings();
+  });
+}
+function addDarkItemInline(idx,input){
   const val=input.value.trim();
   if(!val)return;
-  state.darkItems[rar].push(val);
-  // UIを再構築してインデックスズレを防ぐ
+  state.darkRarities[idx].items.push(val);
   buildDarkSettings();
 }
-function addDarkItem(rar){
-  state.darkItems[rar].push('');
+function addDarkItem(idx){
+  state.darkRarities[idx].items.push('');
   buildDarkSettings();
 }
-function removeDarkItem(rar,idx){
-  state.darkItems[rar].splice(idx,1);
+function removeDarkItem(idx,itemIdx){
+  state.darkRarities[idx].items.splice(itemIdx,1);
   buildDarkSettings();
 }
-function updateDarkRate(rar,val){
-  state.darkRates[rar]=parseFloat(val)||0;
+function updateDarkRate(idx,val){
+  state.darkRarities[idx].rate=parseFloat(val)||0;
   updateDarkRateWarn();
 }
 function updateDarkRateWarn(){
-  const total=DARK_RARITY_ORDER.reduce((s,r)=>s+(parseFloat(document.getElementById('dark-rate-'+r)?.value)||state.darkRates[r]),0);
+  const total=state.darkRarities.reduce((s,r,i)=>s+(parseFloat(document.getElementById('dark-rate-'+i)?.value)||r.rate),0);
   const warn=document.getElementById('dark-rate-warn');
   if(!warn)return;
   const diff=Math.abs(total-100);
@@ -1328,51 +1367,46 @@ function updateDarkRateWarn(){
 }
 function doDarkGacha(n){
   // sync rates from inputs
-  DARK_RARITY_ORDER.forEach(r=>{
-    const el=document.getElementById('dark-rate-'+r);
-    if(el)state.darkRates[r]=parseFloat(el.value)||0;
+  state.darkRarities.forEach((r,i)=>{
+    const el=document.getElementById('dark-rate-'+i);
+    if(el)r.rate=parseFloat(el.value)||0;
   });
-  // get valid items per rarity
-  const pool={};
-  DARK_RARITY_ORDER.forEach(r=>{
-    pool[r]=state.darkItems[r].filter(v=>v.trim());
-  });
-  // 有効なアイテムが存在するレアリティが1つ以上あるかチェック
-  const totalItems=DARK_RARITY_ORDER.reduce((s,r)=>s+pool[r].length,0);
+  // get valid items per rarity index
+  const pool=state.darkRarities.map(r=>r.items.filter(v=>v.trim()));
+  const totalItems=pool.reduce((s,p)=>s+p.length,0);
   if(totalItems===0){
     const warn=document.getElementById('dark-rate-warn');
     if(warn){warn.textContent='⚠️ アイテムを1つ以上設定してからガチャを引いてください';warn.style.color='var(--red)';}
     return;
   }
-  // 確率が設定されているが対応アイテムがないレアリティは確率を再分配
-  let totalRate=DARK_RARITY_ORDER.reduce((s,r)=>s+state.darkRates[r],0);
   // draw
   const results=[];
   for(let i=0;i<n;i++){
     const rand=Math.random()*100;
-    let cum=0,picked=null;
-    for(const r of DARK_RARITY_ORDER){
-      cum+=state.darkRates[r];
-      if(rand<cum){picked=r;break;}
+    let cum=0,pickedIdx=-1;
+    for(let ri=0;ri<state.darkRarities.length;ri++){
+      cum+=state.darkRarities[ri].rate;
+      if(rand<cum){pickedIdx=ri;break;}
     }
-    if(!picked)picked='N';
+    if(pickedIdx===-1)pickedIdx=0;
     // アイテムが空のレアリティが当選した場合、有効アイテムのあるレアリティから再抽選
-    if(!pool[picked]||!pool[picked].length){
-      const validRars=DARK_RARITY_ORDER.filter(r=>pool[r]&&pool[r].length>0);
-      if(validRars.length>0)picked=validRars[Math.floor(Math.random()*validRars.length)];
+    if(!pool[pickedIdx]||!pool[pickedIdx].length){
+      const validIdxs=state.darkRarities.map((_,i)=>i).filter(i=>pool[i]&&pool[i].length>0);
+      if(validIdxs.length>0)pickedIdx=validIdxs[Math.floor(Math.random()*validIdxs.length)];
     }
-    const items=pool[picked]||[];
-    const item=items.length?items[Math.floor(Math.random()*items.length)]:picked;
-    results.push({rar:picked,item});
+    const items=pool[pickedIdx]||[];
+    const rarObj=state.darkRarities[pickedIdx];
+    const item=items.length?items[Math.floor(Math.random()*items.length)]:rarObj.key;
+    results.push({rar:rarObj.key,rarIdx:pickedIdx,color:rarObj.color,item});
   }
   // aggregate duplicates
   const agg={};
-  results.forEach(({rar,item})=>{
+  results.forEach(({rar,rarIdx,color,item})=>{
     const key=`${rar}__${item}`;
-    if(!agg[key])agg[key]={rar,item,count:0};
+    if(!agg[key])agg[key]={rar,rarIdx,color,item,count:0};
     agg[key].count++;
   });
-  const sorted=Object.values(agg).sort((a,b)=>DARK_RARITY_ORDER.indexOf(b.rar)-DARK_RARITY_ORDER.indexOf(a.rar));
+  const sorted=Object.values(agg).sort((a,b)=>b.rarIdx-a.rarIdx);
   // display result
   const resultCard=document.getElementById('dark-result-card');
   const grid=document.getElementById('dark-result-grid');
@@ -1380,29 +1414,53 @@ function doDarkGacha(n){
   resultCard.style.display='block';
   summary.textContent=`${n}回`;
   grid.innerHTML='';
-  sorted.forEach(({rar,item,count})=>{
+  sorted.forEach(({rar,color,item,count})=>{
     const card=document.createElement('div');
     card.className='dark-result-card';
     card.style.animation='popIn .3s cubic-bezier(.34,1.56,.64,1)';
-    card.innerHTML=`<span class="dark-result-rarity" style="background:${DARK_RARITY_COLORS[rar]}">${esc(rar)}</span><span class="dark-result-name">${esc(item)}</span>${count>1?`<span class="dark-result-count">×${count}</span>`:''}`;
+    card.innerHTML=`<span class="dark-result-rarity" style="background:${color}">${esc(rar)}</span><span class="dark-result-name">${esc(item)}</span>${count>1?`<span class="dark-result-count">×${count}</span>`:''}`;
     grid.appendChild(card);
   });
   // add to history
   const listenerName=(document.getElementById('dark-listener-name')?.value.trim())||'';
   const histCard=document.getElementById('dark-history-card');
-  const histList=document.getElementById('dark-history-list');
   histCard.style.display='block';
-  state.darkHistory.unshift({n,results:sorted,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),name:listenerName});
-
-  // CSVログに追記（1件ずつ展開して蓄積、×N個は個別に記録）
+  const histId=Date.now();  // この試行の一意ID
+  state.darkHistory.unshift({n,results:sorted,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),name:listenerName,histId});
+  // CSVログに追記（1件ずつ展開・histIdで紐付け）
   results.forEach(({rar,item})=>{
-    state.darkCSVLog.push({listener:listenerName||'名無し',rarity:rar,gift:item});
+    state.darkCSVLog.push({listener:listenerName||'名無し',rarity:rar,gift:item,histId});
   });
   updateDarkCSVCount();
-  // 現在の結果カードのツイートボタンにindex=0をセット
   const rBtn=document.getElementById('dark-result-tweet-btn');
   if(rBtn)rBtn.onclick=()=>tweetDarkResult(0);
-  histList.innerHTML=state.darkHistory.slice(0,10).map((h,idx)=>`<div class="dark-hist-item"><div class="dark-hist-meta"><span>${h.name?esc(h.name)+' · ':''}<span style="font-weight:900;color:var(--text)">${h.n}連</span></span><div style="display:flex;align-items:center;gap:6px"><span>${h.time}</span><button class="dark-tweet-btn" onclick="tweetDarkResult(${idx})">🐦</button></div></div><div class="dark-hist-tags">${h.results.map(r=>`<span class="dark-hist-tag" style="background:${DARK_RARITY_COLORS[r.rar]}">${esc(r.item)}${r.count>1?`×${r.count}`:''}</span>`).join('')}</div></div>`).join('');
+  renderDarkHistory();
+}
+function renderDarkHistory(){
+  const histList=document.getElementById('dark-history-list');
+  if(!histList)return;
+  histList.innerHTML=state.darkHistory.slice(0,10).map((h,idx)=>
+    `<div class="dark-hist-item"><div class="dark-hist-meta"><span>${h.name?esc(h.name)+' · ':''}<span style="font-weight:900;color:var(--text)">${h.n}連</span></span><div style="display:flex;align-items:center;gap:6px"><span>${h.time}</span><button class="dark-tweet-btn" onclick="tweetDarkResult(${idx})">🐦</button><button class="dark-hist-del-btn" onclick="deleteDarkHistEntry(${idx})" title="この結果とCSV記録を削除">🗑</button></div></div><div class="dark-hist-tags">${h.results.map(r=>`<span class="dark-hist-tag" style="background:${r.color||getDarkColor(r.rar)}">${esc(r.item)}${r.count>1?`×${r.count}`:''}</span>`).join('')}</div></div>`
+  ).join('');
+}
+function deleteDarkHistEntry(idx){
+  const entry=state.darkHistory[idx];
+  if(!entry)return;
+  // histIdが紐付いているCSVログを削除
+  if(entry.histId!==undefined){
+    const before=state.darkCSVLog.length;
+    state.darkCSVLog=state.darkCSVLog.filter(r=>r.histId!==entry.histId);
+    const removed=before-state.darkCSVLog.length;
+    updateDarkCSVCount();
+    if(removed>0)showToast(`🗑 CSV記録 ${removed}件も削除しました`);
+  }
+  state.darkHistory.splice(idx,1);
+  if(state.darkHistory.length===0){
+    document.getElementById('dark-history-card').style.display='none';
+    document.getElementById('dark-result-card').style.display='none';
+  } else {
+    renderDarkHistory();
+  }
 }
 function doDarkGachaCustom(){
   const n=parseInt(document.getElementById('dark-custom-num').value)||1;
@@ -1697,10 +1755,7 @@ function tweetRouletteResult(){
 // ===== LOCAL STORAGE SAVE / LOAD =====
 const SAVE_KEY='iriam_tool_v1';
 
-function saveAll(){
-  const btn=document.getElementById('save-btn');
-  if(btn){btn.classList.add('saving');btn.textContent='💾 保存中…';}
-
+function saveAll(silent){
   // Set→Arrayに変換してシリアライズ
   const payload={
     version:1,
@@ -1715,8 +1770,7 @@ function saveAll(){
     counterIdSeq,
     anyIdSeq,
     gachaHistory:[...state.gachaHistory],
-    darkItems:JSON.parse(JSON.stringify(state.darkItems)),
-    darkRates:JSON.parse(JSON.stringify(state.darkRates)),
+    darkRarities:JSON.parse(JSON.stringify(state.darkRarities)),
     darkHistory:state.darkHistory.slice(0,20),
     darkCSVLog:state.darkCSVLog.slice(0,5000),
     durability:JSON.parse(JSON.stringify(state.durability)),
@@ -1732,14 +1786,10 @@ function saveAll(){
   try{
     localStorage.setItem(SAVE_KEY,JSON.stringify(payload));
     showSaveTime(payload.savedAt);
-    showToast('💾 保存しました！');
+    if(!silent)showToast('💾 保存しました！');
   }catch(e){
     showToast('⚠️ 保存に失敗しました（容量不足の可能性）');
   }
-
-  setTimeout(()=>{
-    if(btn){btn.classList.remove('saving');btn.textContent='💾 保存';}
-  },600);
 }
 
 function loadAll(){
@@ -1777,16 +1827,19 @@ function loadAll(){
   // ガチャ履歴
   if(d.gachaHistory)state.gachaHistory=[...d.gachaHistory];
 
-  // 闇ガチャ
-  if(d.darkItems){
-    Object.keys(state.darkItems).forEach(k=>{
-      if(d.darkItems[k])state.darkItems[k]=[...d.darkItems[k]];
-    });
-  }
-  if(d.darkRates){
-    Object.keys(state.darkRates).forEach(k=>{
-      if(d.darkRates[k]!==undefined)state.darkRates[k]=d.darkRates[k];
-    });
+  // 闇ガチャ（新フォーマット優先、旧フォーマット互換）
+  if(d.darkRarities&&Array.isArray(d.darkRarities)&&d.darkRarities.length>0){
+    state.darkRarities=d.darkRarities.map(r=>({...r,items:[...(r.items||[])]}));
+  }else if(d.darkItems||d.darkRates){
+    // 旧フォーマット互換
+    const OLD_KEYS=['N','R','SR','SSR','UR'];
+    const OLD_COLORS={N:'#7a8fa6',R:'#3dcc7a',SR:'#5b9fff',SSR:'#ff8c42',UR:'#ff5c6a'};
+    const OLD_DEF={N:70,R:20,SR:7,SSR:2,UR:1};
+    state.darkRarities=OLD_KEYS.map(k=>({
+      key:k,color:OLD_COLORS[k],
+      rate:d.darkRates?.[k]??OLD_DEF[k],
+      items:[...(d.darkItems?.[k]||[])],
+    }));
   }
   if(d.darkHistory)state.darkHistory=[...d.darkHistory];
 
@@ -1833,6 +1886,19 @@ function showToast(msg){
   if(_toastTimer)clearTimeout(_toastTimer);
   _toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
 }
+
+// ===== AUTO SAVE =====
+// 手動保存ボタンは廃止し、操作を検知して自動保存する
+let _autoSaveTimer=null;
+function scheduleAutoSave(){
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer=setTimeout(()=>saveAll(true),600);
+}
+document.addEventListener('click',scheduleAutoSave,true);
+document.addEventListener('input',scheduleAutoSave,true);
+setInterval(()=>saveAll(true),5000); // ルーレット演出など操作イベントを介さない変化を拾う保険
+document.addEventListener('visibilitychange',()=>{if(document.hidden)saveAll(true);});
+window.addEventListener('beforeunload',()=>saveAll(true));
 
 buildPresets();
 initTabs();
