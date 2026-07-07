@@ -298,6 +298,11 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 .dark-item-wrap{display:flex;align-items:center;gap:4px}
 .dark-item-input{width:90px;background:var(--white);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:12px;font-weight:700;padding:6px 8px;outline:none;transition:border-color .15s}
 .dark-item-input:focus{border-color:var(--ac)}
+.dark-item-stock-input{width:46px;background:var(--white);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:12px;font-weight:700;padding:6px 4px;outline:none;transition:border-color .15s;text-align:center}
+.dark-item-stock-input:focus{border-color:var(--ac)}
+.dark-item-wrap.sold-out{opacity:.5}
+.dark-item-wrap.sold-out .dark-item-input{text-decoration:line-through}
+.dark-item-wrap.sold-out .dark-item-stock-input{border-color:var(--red);color:var(--red)}
 .dark-item-del{background:transparent;border:none;color:var(--text2);font-size:14px;cursor:pointer;padding:2px 4px;flex-shrink:0}
 .dark-add-item-btn{background:var(--ac-light);border:2px solid var(--border);color:var(--ac-dark);font-family:inherit;font-size:11px;font-weight:900;padding:6px 10px;border-radius:10px;cursor:pointer;white-space:nowrap}
 .dark-result-card{background:var(--white);border:2px solid var(--border);border-radius:14px;padding:9px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;box-shadow:var(--shadow)}
@@ -1293,6 +1298,12 @@ function getDarkColor(rarKey){
   const r=state.darkRarities.find(r=>r.key===rarKey);
   return r?r.color:'#7a8fa6';
 }
+function normalizeDarkItem(it){
+  // 旧保存形式（文字列のみ）を{name,stock}に変換。stockは無ければ無制限(null)扱い
+  if(typeof it==='string')return{name:it,stock:null};
+  if(it&&typeof it==='object')return{name:it.name??'',stock:(it.stock==null?null:Math.max(0,parseInt(it.stock,10)||0))};
+  return{name:'',stock:null};
+}
 function buildDarkSettings(){
   const wrap=document.getElementById('dark-rarity-settings');
   wrap.innerHTML='';
@@ -1300,7 +1311,10 @@ function buildDarkSettings(){
     const block=document.createElement('div');
     block.className='dark-rarity-block';
     block.id=`dark-block-${idx}`;
-    const itemsHtml=rar.items.map((v,i)=>`<div class="dark-item-wrap"><input class="dark-item-input" type="text" value="${esc(v)}" placeholder="アイテム名" oninput="state.darkRarities[${idx}].items[${i}]=this.value"><button class="dark-item-del" onclick="removeDarkItem(${idx},${i})">✕</button></div>`).join('');
+    const itemsHtml=rar.items.map((v,i)=>{
+      const soldOut=v.stock!=null&&v.stock<=0;
+      return `<div class="dark-item-wrap${soldOut?' sold-out':''}" id="dark-item-${idx}-${i}"><input class="dark-item-input" type="text" value="${esc(v.name)}" placeholder="アイテム名" oninput="state.darkRarities[${idx}].items[${i}].name=this.value"><input class="dark-item-stock-input" type="number" min="0" step="1" inputmode="numeric" value="${v.stock==null?'':v.stock}" placeholder="∞" title="在庫数（空欄で無制限）" oninput="updateDarkStock(${idx},${i},this.value)"><button class="dark-item-del" onclick="removeDarkItem(${idx},${i})">✕</button></div>`;
+    }).join('');
     const empties=Math.max(0,5-rar.items.length);
     const emptyHtml=Array.from({length:empties},()=>`<div class="dark-item-wrap"><input class="dark-item-input" type="text" placeholder="アイテム名" onblur="addDarkItemInline(${idx},this)" onkeydown="if(event.key==='Enter'){this.blur()}"></div>`).join('');
     const canDelete=state.darkRarities.length>1;
@@ -1342,16 +1356,23 @@ function removeDarkRarity(idx){
 function addDarkItemInline(idx,input){
   const val=input.value.trim();
   if(!val)return;
-  state.darkRarities[idx].items.push(val);
+  state.darkRarities[idx].items.push({name:val,stock:null});
   buildDarkSettings();
 }
 function addDarkItem(idx){
-  state.darkRarities[idx].items.push('');
+  state.darkRarities[idx].items.push({name:'',stock:null});
   buildDarkSettings();
 }
 function removeDarkItem(idx,itemIdx){
   state.darkRarities[idx].items.splice(itemIdx,1);
   buildDarkSettings();
+}
+function updateDarkStock(idx,itemIdx,val){
+  const v=val.trim();
+  const stock=v===''?null:Math.max(0,parseInt(v,10)||0);
+  state.darkRarities[idx].items[itemIdx].stock=stock;
+  const wrap=document.getElementById(`dark-item-${idx}-${itemIdx}`);
+  if(wrap)wrap.classList.toggle('sold-out',stock!=null&&stock<=0);
 }
 function updateDarkRate(idx,val){
   state.darkRarities[idx].rate=parseFloat(val)||0;
@@ -1371,17 +1392,24 @@ function doDarkGacha(n){
     const el=document.getElementById('dark-rate-'+i);
     if(el)r.rate=parseFloat(el.value)||0;
   });
-  // get valid items per rarity index
-  const pool=state.darkRarities.map(r=>r.items.filter(v=>v.trim()));
+  // 在庫を考慮した抽選対象（名前未入力・在庫切れは除外／stockがnullなら無制限）
+  const allItems=state.darkRarities.map(r=>
+    r.items
+      .map((it,i)=>({origIdx:i,name:(it.name||'').trim(),stock:it.stock==null?null:it.stock}))
+      .filter(it=>it.name&&(it.stock===null||it.stock>0))
+  );
+  // 抽選用の作業コピー（配列だけ複製。中身のオブジェクトはallItemsと共有するのでstock消費は両方に反映される）
+  const pool=allItems.map(arr=>arr.slice());
   const totalItems=pool.reduce((s,p)=>s+p.length,0);
   if(totalItems===0){
     const warn=document.getElementById('dark-rate-warn');
-    if(warn){warn.textContent='⚠️ アイテムを1つ以上設定してからガチャを引いてください';warn.style.color='var(--red)';}
+    if(warn){warn.textContent='⚠️ 抽選できるアイテムがありません（未設定 or 在庫切れ）';warn.style.color='var(--red)';}
     return;
   }
   // draw
   const results=[];
   for(let i=0;i<n;i++){
+    if(pool.reduce((s,p)=>s+p.length,0)===0)break; // 在庫切れで抽選対象が尽きた
     const rand=Math.random()*100;
     let cum=0,pickedIdx=-1;
     for(let ri=0;ri<state.darkRarities.length;ri++){
@@ -1392,13 +1420,29 @@ function doDarkGacha(n){
     // アイテムが空のレアリティが当選した場合、有効アイテムのあるレアリティから再抽選
     if(!pool[pickedIdx]||!pool[pickedIdx].length){
       const validIdxs=state.darkRarities.map((_,i)=>i).filter(i=>pool[i]&&pool[i].length>0);
-      if(validIdxs.length>0)pickedIdx=validIdxs[Math.floor(Math.random()*validIdxs.length)];
+      if(validIdxs.length===0)break;
+      pickedIdx=validIdxs[Math.floor(Math.random()*validIdxs.length)];
     }
-    const items=pool[pickedIdx]||[];
+    const items=pool[pickedIdx];
     const rarObj=state.darkRarities[pickedIdx];
-    const item=items.length?items[Math.floor(Math.random()*items.length)]:rarObj.key;
-    results.push({rar:rarObj.key,rarIdx:pickedIdx,color:rarObj.color,item});
+    const pickPos=Math.floor(Math.random()*items.length);
+    const picked=items[pickPos];
+    results.push({rar:rarObj.key,rarIdx:pickedIdx,color:rarObj.color,item:picked.name});
+    // 在庫を消費（無制限=nullはそのまま）
+    if(picked.stock!==null){
+      picked.stock--;
+      if(picked.stock<=0)items.splice(pickPos,1); // このバッチ内ではもう出さない
+    }
   }
+  if(results.length===0)return;
+  // 消費した在庫数を実データに反映（allItemsは在庫0になった要素も保持しているので漏れなく反映できる）
+  allItems.forEach((items,ri)=>{
+    items.forEach(it=>{
+      if(it.stock!==null)state.darkRarities[ri].items[it.origIdx].stock=it.stock;
+    });
+  });
+  buildDarkSettings(); // 設定パネルの在庫表示を更新
+  const actualN=results.length;
   // aggregate duplicates
   const agg={};
   results.forEach(({rar,rarIdx,color,item})=>{
@@ -1412,7 +1456,7 @@ function doDarkGacha(n){
   const grid=document.getElementById('dark-result-grid');
   const summary=document.getElementById('dark-result-summary');
   resultCard.style.display='block';
-  summary.textContent=`${n}回`;
+  summary.textContent=`${actualN}回`;
   grid.innerHTML='';
   sorted.forEach(({rar,color,item,count})=>{
     const card=document.createElement('div');
@@ -1426,7 +1470,7 @@ function doDarkGacha(n){
   const histCard=document.getElementById('dark-history-card');
   histCard.style.display='block';
   const histId=Date.now();  // この試行の一意ID
-  state.darkHistory.unshift({n,results:sorted,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),name:listenerName,histId});
+  state.darkHistory.unshift({n:actualN,results:sorted,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),name:listenerName,histId});
   // CSVログに追記（1件ずつ展開・histIdで紐付け）
   results.forEach(({rar,item})=>{
     state.darkCSVLog.push({listener:listenerName||'名無し',rarity:rar,gift:item,histId});
@@ -1435,6 +1479,7 @@ function doDarkGacha(n){
   const rBtn=document.getElementById('dark-result-tweet-btn');
   if(rBtn)rBtn.onclick=()=>tweetDarkResult(0);
   renderDarkHistory();
+  if(actualN<n)showToast(`⚠️ 在庫切れのため${actualN}回で終了しました`);
 }
 function renderDarkHistory(){
   const histList=document.getElementById('dark-history-list');
@@ -1841,6 +1886,8 @@ function loadAll(){
       items:[...(d.darkItems?.[k]||[])],
     }));
   }
+  // アイテムを{name,stock}形式に正規化（文字列のみの旧データも移行）
+  state.darkRarities=state.darkRarities.map(r=>({...r,items:r.items.map(normalizeDarkItem)}));
   if(d.darkHistory)state.darkHistory=[...d.darkHistory];
 
   // CSVログ復元
