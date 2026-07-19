@@ -281,6 +281,14 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 .roulette-item-del:active{transform:scale(.92)}
 
 
+.dark-type-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:2px}
+.dark-type-tab{padding:8px 14px;border-radius:14px;border:2px solid var(--border);background:var(--white);color:var(--text2);font-family:inherit;font-weight:900;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.dark-type-tab:active{transform:scale(.95)}
+.dark-type-tab.active{display:flex;align-items:center;gap:4px;background:var(--ac-light);border-color:var(--ac);color:var(--ac-dark);cursor:default}
+.dark-type-name-input{width:64px;background:transparent;border:none;color:var(--ac-dark);font-family:inherit;font-weight:900;font-size:12px;outline:none;padding:0}
+.dark-type-del{background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;padding:0 2px;line-height:1}
+.dark-type-add-btn{padding:8px 12px;border-radius:14px;border:2px dashed var(--border);background:var(--white);color:var(--ac-dark);font-family:inherit;font-weight:900;font-size:12px;cursor:pointer;white-space:nowrap}
+.dark-type-add-btn:active{transform:scale(.95)}
 .dark-rarity-block{background:var(--bg);border:2px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px}
 .dark-rarity-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .dark-rarity-badge{font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;padding:4px 12px;border-radius:20px;color:white;white-space:nowrap}
@@ -488,6 +496,9 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
     <div class="page" id="page-dark">
       <div class="gacha-wrap">
 
+        <!-- ガチャ種類タブ -->
+        <div class="dark-type-bar" id="dark-type-bar"></div>
+
         <!-- レアリティ設定 -->
         <div class="card">
           <div class="card-label">⚙️ レアリティ設定（確率・アイテム）</div>
@@ -677,17 +688,35 @@ const state={
   petitGift:Object.fromEntries(Object.keys(PETIT_GIFTS).map(k=>[k,new Set()])),
   giftMode:'full',
   counters:[], gachaHistory:[],
-  darkRarities:[
-    {key:'N',  color:'#7a8fa6',rate:70,items:[]},
-    {key:'R',  color:'#3dcc7a',rate:20,items:[]},
-    {key:'SR', color:'#5b9fff',rate:7, items:[]},
-    {key:'SSR',color:'#ff8c42',rate:2, items:[]},
-    {key:'UR', color:'#ff5c6a',rate:1, items:[]},
+  // 闇ガチャ「種類」ごとに、レアリティ設定・履歴・CSVログを完全に独立して持つ
+  darkGachas:[
+    {id:1,name:'A',rarities:[
+      {key:'N',  color:'#7a8fa6',rate:70,items:[]},
+      {key:'R',  color:'#3dcc7a',rate:20,items:[]},
+      {key:'SR', color:'#5b9fff',rate:7, items:[]},
+      {key:'SSR',color:'#ff8c42',rate:2, items:[]},
+      {key:'UR', color:'#ff5c6a',rate:1, items:[]},
+    ],history:[],csvLog:[]},
   ],
-  darkHistory:[],
-  darkCSVLog:[],  // { listener, rarity, gift } の累積ログ
+  darkActiveIdx:0,
   durability:[],
 };
+// state.darkRarities / darkHistory / darkCSVLog は「現在アクティブな闇ガチャ種類」への
+// エイリアス（getter/setter）にする。こうすることで既存のガチャ処理系コードは
+// 一切変更せずに、種類切替に応じて自動的に対象データが切り替わる。
+Object.defineProperty(state,'darkRarities',{
+  get(){return this.darkGachas[this.darkActiveIdx].rarities;},
+  set(v){this.darkGachas[this.darkActiveIdx].rarities=v;}
+});
+Object.defineProperty(state,'darkHistory',{
+  get(){return this.darkGachas[this.darkActiveIdx].history;},
+  set(v){this.darkGachas[this.darkActiveIdx].history=v;}
+});
+Object.defineProperty(state,'darkCSVLog',{
+  get(){return this.darkGachas[this.darkActiveIdx].csvLog;},
+  set(v){this.darkGachas[this.darkActiveIdx].csvLog=v;}
+});
+let darkGachaIdSeq=1;
 
 // ===== SANITIZE (XSS対策) =====
 function esc(str){
@@ -1293,6 +1322,78 @@ function resetPetitAll(){
   });
 }
 
+// ===== DARK GACHA TYPES (種類タブ) =====
+function renderDarkTypeTabs(){
+  const bar=document.getElementById('dark-type-bar');
+  if(!bar)return;
+  const canDelete=state.darkGachas.length>1;
+  bar.innerHTML=state.darkGachas.map((g,idx)=>{
+    if(idx===state.darkActiveIdx){
+      return `<div class="dark-type-tab active"><input class="dark-type-name-input" type="text" value="${esc(g.name)}" maxlength="10" oninput="renameDarkGachaType(${idx},this.value)"><span class="dark-type-badge">🌑</span>${canDelete?`<button class="dark-type-del" onclick="removeDarkGachaType(${idx})" title="このガチャ種類を削除">✕</button>`:''}</div>`;
+    }
+    return `<button class="dark-type-tab" onclick="switchDarkGachaType(${idx})">🌑 ${esc(g.name)}</button>`;
+  }).join('')+`<button class="dark-type-add-btn" onclick="addDarkGachaType()">＋ 種類を追加</button>`;
+}
+function refreshDarkGachaUI(){
+  renderDarkTypeTabs();
+  buildDarkSettings();
+  document.getElementById('dark-result-card').style.display='none';
+  document.getElementById('dark-result-grid').innerHTML='';
+  const histCard=document.getElementById('dark-history-card');
+  if(state.darkHistory.length>0){
+    histCard.style.display='block';
+    renderDarkHistory();
+  }else{
+    histCard.style.display='none';
+    document.getElementById('dark-history-list').innerHTML='';
+  }
+  updateDarkCSVCount();
+}
+function switchDarkGachaType(idx){
+  if(idx===state.darkActiveIdx||!state.darkGachas[idx])return;
+  state.darkActiveIdx=idx;
+  refreshDarkGachaUI();
+}
+function renameDarkGachaType(idx,val){
+  if(state.darkGachas[idx])state.darkGachas[idx].name=val;
+}
+function addDarkGachaType(){
+  const used=new Set(state.darkGachas.map(g=>g.name));
+  let name=null;
+  for(let i=0;i<26;i++){
+    const c=String.fromCharCode(65+i);
+    if(!used.has(c)){name=c;break;}
+  }
+  if(!name){
+    let n=state.darkGachas.length+1;
+    while(used.has(`種類${n}`))n++;
+    name=`種類${n}`;
+  }
+  state.darkGachas.push({
+    id:++darkGachaIdSeq,
+    name,
+    rarities:[
+      {key:'N',  color:'#7a8fa6',rate:70,items:[]},
+      {key:'R',  color:'#3dcc7a',rate:20,items:[]},
+      {key:'SR', color:'#5b9fff',rate:7, items:[]},
+      {key:'SSR',color:'#ff8c42',rate:2, items:[]},
+      {key:'UR', color:'#ff5c6a',rate:1, items:[]},
+    ],
+    history:[],
+    csvLog:[],
+  });
+  state.darkActiveIdx=state.darkGachas.length-1;
+  refreshDarkGachaUI();
+}
+function removeDarkGachaType(idx){
+  if(state.darkGachas.length<=1)return;
+  showConfirm('このガチャ種類を削除しますか？\n（この種類の履歴・CSV記録もすべて消えます）',()=>{
+    state.darkGachas.splice(idx,1);
+    if(state.darkActiveIdx>=state.darkGachas.length)state.darkActiveIdx=state.darkGachas.length-1;
+    refreshDarkGachaUI();
+  });
+}
+
 // ===== DARK GACHA =====
 function getDarkColor(rarKey){
   const r=state.darkRarities.find(r=>r.key===rarKey);
@@ -1542,7 +1643,8 @@ function exportDarkCSV(){
   a.href=url;
   const now=new Date();
   const d=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-  a.download=`闇ガチャ結果_${d}.csv`;
+  const typeName=(state.darkGachas[state.darkActiveIdx]?.name||'').replace(/[\\/:*?"<>|]/g,'');
+  a.download=`闇ガチャ結果_${typeName}_${d}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1815,9 +1917,14 @@ function saveAll(silent){
     counterIdSeq,
     anyIdSeq,
     gachaHistory:[...state.gachaHistory],
-    darkRarities:JSON.parse(JSON.stringify(state.darkRarities)),
-    darkHistory:state.darkHistory.slice(0,20),
-    darkCSVLog:state.darkCSVLog.slice(0,5000),
+    darkGachas:state.darkGachas.map(g=>({
+      id:g.id,
+      name:g.name,
+      rarities:JSON.parse(JSON.stringify(g.rarities)),
+      history:g.history.slice(0,20),
+      csvLog:g.csvLog.slice(0,5000),
+    })),
+    darkActiveIdx:state.darkActiveIdx,
     durability:JSON.parse(JSON.stringify(state.durability)),
     durIdSeq,
     durItemIdSeq,
@@ -1872,26 +1979,44 @@ function loadAll(){
   // ガチャ履歴
   if(d.gachaHistory)state.gachaHistory=[...d.gachaHistory];
 
-  // 闇ガチャ（新フォーマット優先、旧フォーマット互換）
-  if(d.darkRarities&&Array.isArray(d.darkRarities)&&d.darkRarities.length>0){
-    state.darkRarities=d.darkRarities.map(r=>({...r,items:[...(r.items||[])]}));
-  }else if(d.darkItems||d.darkRates){
-    // 旧フォーマット互換
-    const OLD_KEYS=['N','R','SR','SSR','UR'];
-    const OLD_COLORS={N:'#7a8fa6',R:'#3dcc7a',SR:'#5b9fff',SSR:'#ff8c42',UR:'#ff5c6a'};
-    const OLD_DEF={N:70,R:20,SR:7,SSR:2,UR:1};
-    state.darkRarities=OLD_KEYS.map(k=>({
-      key:k,color:OLD_COLORS[k],
-      rate:d.darkRates?.[k]??OLD_DEF[k],
-      items:[...(d.darkItems?.[k]||[])],
+  // 闇ガチャ（種類ごとの新フォーマット優先、旧フォーマット互換）
+  if(d.darkGachas&&Array.isArray(d.darkGachas)&&d.darkGachas.length>0){
+    state.darkGachas=d.darkGachas.map((g,i)=>({
+      id:g.id??(i+1),
+      name:g.name||(i<26?String.fromCharCode(65+i):`種類${i+1}`),
+      rarities:(g.rarities||[]).map(r=>({...r,items:[...(r.items||[])]})),
+      history:[...(g.history||[])],
+      csvLog:[...(g.csvLog||[])],
     }));
+    state.darkActiveIdx=(d.darkActiveIdx!=null&&d.darkActiveIdx<state.darkGachas.length&&d.darkActiveIdx>=0)?d.darkActiveIdx:0;
+  }else if((d.darkRarities&&Array.isArray(d.darkRarities)&&d.darkRarities.length>0)||d.darkItems||d.darkRates){
+    // 旧フォーマット（種類分けが無かった頃の単一ガチャ）→「A」として1種類目に移行
+    let rarities;
+    if(d.darkRarities&&Array.isArray(d.darkRarities)&&d.darkRarities.length>0){
+      rarities=d.darkRarities.map(r=>({...r,items:[...(r.items||[])]}));
+    }else{
+      const OLD_KEYS=['N','R','SR','SSR','UR'];
+      const OLD_COLORS={N:'#7a8fa6',R:'#3dcc7a',SR:'#5b9fff',SSR:'#ff8c42',UR:'#ff5c6a'};
+      const OLD_DEF={N:70,R:20,SR:7,SSR:2,UR:1};
+      rarities=OLD_KEYS.map(k=>({
+        key:k,color:OLD_COLORS[k],
+        rate:d.darkRates?.[k]??OLD_DEF[k],
+        items:[...(d.darkItems?.[k]||[])],
+      }));
+    }
+    state.darkGachas=[{
+      id:1,name:'A',
+      rarities,
+      history:[...(d.darkHistory||[])],
+      csvLog:[...(d.darkCSVLog||[])],
+    }];
+    state.darkActiveIdx=0;
   }
   // アイテムを{name,stock}形式に正規化（文字列のみの旧データも移行）
-  state.darkRarities=state.darkRarities.map(r=>({...r,items:r.items.map(normalizeDarkItem)}));
-  if(d.darkHistory)state.darkHistory=[...d.darkHistory];
-
-  // CSVログ復元
-  if(d.darkCSVLog)state.darkCSVLog=[...d.darkCSVLog];
+  state.darkGachas.forEach(g=>{
+    g.rarities=g.rarities.map(r=>({...r,items:r.items.map(normalizeDarkItem)}));
+  });
+  darkGachaIdSeq=Math.max(1,...state.darkGachas.map(g=>g.id||0));
 
   // 耐久
   if(d.durability){
@@ -1966,6 +2091,7 @@ if(state.counters.length===0) addCounter('入室耐久',100);
 else renderCounterList();
 
 buildDarkSettings();
+renderDarkTypeTabs();
 renderDurabilityList();
 renderRouletteItemInputs();
 updateDarkCSVCount();
