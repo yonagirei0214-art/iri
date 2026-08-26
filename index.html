@@ -1923,7 +1923,7 @@ function saveAll(silent){
       name:g.name,
       rarities:JSON.parse(JSON.stringify(g.rarities)),
       history:g.history.slice(0,20),
-      csvLog:g.csvLog.slice(0,5000),
+      csvLog:g.csvLog.slice(0,1000000),
     })),
     darkActiveIdx:state.darkActiveIdx,
     durability:JSON.parse(JSON.stringify(state.durability)),
