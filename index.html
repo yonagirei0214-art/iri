@@ -319,6 +319,9 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
 .dark-result-count{font-family:'Nunito',sans-serif;font-weight:900;font-size:11px;color:var(--ac-dark);background:var(--ac-light);border-radius:8px;padding:1px 7px}
 .dark-tweet-btn{background:linear-gradient(135deg,#1da1f2,#0d8fd6);border:none;border-radius:10px;color:white;font-family:inherit;font-size:11px;font-weight:900;padding:5px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .dark-tweet-btn:active{transform:scale(.93)}
+.dark-discord-btn{background:linear-gradient(135deg,#5865f2,#4752c4);border:none;border-radius:10px;color:white;font-family:inherit;font-size:11px;font-weight:900;padding:5px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.dark-discord-btn:active{transform:scale(.93)}
+.dark-discord-btn:disabled{opacity:.5;cursor:not-allowed}
 .dark-hist-del-btn{background:#fff0f2;border:1px solid #ffd0d6;border-radius:8px;color:var(--red);font-family:inherit;font-size:11px;font-weight:900;padding:4px 7px;cursor:pointer;flex-shrink:0}
 .dark-hist-del-btn:active{transform:scale(.93)}
 .dark-hist-meta{display:flex;justify-content:space-between;margin-bottom:5px;font-size:10px;color:var(--text2);font-weight:900}
@@ -512,6 +515,29 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
           <input type="text" id="dark-listener-name" placeholder="例：○○さん" style="width:100%;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:15px;font-weight:900;padding:11px 13px;outline:none;transition:border-color .16s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--border)'">
           <div class="card-label" style="margin-top:10px">🔗 返信先ツイートURL（空欄なら通常ツイート）</div>
           <input type="text" id="dark-reply-url" placeholder="https://x.com/user/status/123..." style="width:100%;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:13px;font-weight:700;padding:11px 13px;outline:none;transition:border-color .16s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--border)'">
+          <div class="card-label" style="margin-top:10px">📮 Discord Webhook URL（送信先サーバー）</div>
+          <div style="display:flex;gap:6px;align-items:stretch">
+            <input type="text" id="dark-discord-webhook" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/..." style="flex:1;min-width:0;-webkit-text-security:disc;width:100%;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:13px;font-weight:700;padding:11px 13px;outline:none;transition:border-color .16s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--border)'">
+            <button type="button" class="dark-discord-btn" id="dark-discord-eye" onclick="toggleWebhookVisible()" title="URLの表示/非表示" style="font-size:14px">👁</button>
+            <button type="button" class="dark-discord-btn" onclick="sendDiscordTest(this)" title="テストメッセージを送信">🧪 テスト</button>
+          </div>
+          <div style="margin-top:4px;font-size:10px;font-weight:700;color:var(--text2)">※ URLは自動保存されます（この端末のブラウザ内のみ）。配信画面に映らないよう、通常は伏せ字になっています。</div>
+          <details class="webhook-guide" style="margin-top:8px;background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:8px 12px">
+            <summary style="cursor:pointer;font-size:12px;font-weight:900;color:var(--text)">📖 Webhook URLの作り方（初めての方はこちら）</summary>
+            <ol style="margin:8px 0 6px 18px;padding:0;font-size:11px;font-weight:700;color:var(--text2);line-height:1.8">
+              <li>Discordで結果を送りたい<b>サーバー</b>を開き、送信先の<b>テキストチャンネル</b>の ⚙️（チャンネルの編集）を開く<br>（スマホは、チャンネルを長押し →「チャンネルを編集」）</li>
+              <li>「<b>連携サービス</b>」→「<b>ウェブフック</b>」→「<b>新しいウェブフック</b>」をタップ</li>
+              <li>名前（例：ガチャ結果）と投稿先チャンネルを確認し、「<b>ウェブフックURLをコピー</b>」をタップ</li>
+              <li>このツールの入力欄に貼り付け →「<b>🧪 テスト</b>」で届くか確認</li>
+              <li>ガチャ結果の「<b>📮 Discord</b>」ボタンで送信できます</li>
+            </ol>
+            <div style="font-size:10px;font-weight:700;color:var(--text2);line-height:1.7">
+              ・ウェブフックの作成には、サーバーの「ウェブフックの管理」権限が必要です。<br>
+              ・URLを知っている人は誰でもそのチャンネルに投稿できます。<b>配信画面・SNS・スクショに映さないでください。</b>漏れた場合はDiscord側でウェブフックを削除して作り直してください。<br>
+              ・URLの形式：<code>https://discord.com/api/webhooks/数字/英数字</code><br>
+              ・2000文字を超える結果は自動で複数メッセージに分けて送信されます。
+            </div>
+          </details>
         </div>
 
         <!-- 回数ボタン -->
@@ -531,6 +557,7 @@ header{background:var(--white);border-bottom:2px solid var(--border);box-shadow:
             <div style="display:flex;align-items:center;gap:8px">
               <div id="dark-result-summary" style="font-size:11px;font-weight:900;color:var(--text2)"></div>
               <button class="dark-tweet-btn" id="dark-result-tweet-btn" onclick="tweetDarkResult(-1)">🐦 ツイート</button>
+              <button class="dark-discord-btn" id="dark-result-discord-btn" onclick="sendDarkResultDiscord(_lastDarkResult,this)">📮 Discord</button>
             </div>
           </div>
           <div id="dark-result-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px"></div>
@@ -627,13 +654,14 @@ const MBTI_LIST=[
 ];
 
 const GIFTS={
-  'ネタ':{color:'#ff6eb4',bg:'#fff0f8',items:['もういっかい！','ダウト','ざわざわ','炎','非常口','いつもので','かー','つー','一体感','乗りなッ！','乗りろ…','しーっ','はて…？','やれやれ','ぱぁ。','完全燃焼','激熱','まぶしい','世界一','祭うちわ','ええやん','最強','スリスリ','厨二病','拳','ふぅー!!','そんなバナナ','メシウマ','アニキーー！','仰せのままに','漢','鉄アレイ','しおしお','ヒャッホー！','あざとい','おもしれーやつ','沼','鳥肌注意','すやぁ…','やりおる','あとは頼んだ','おねぎします。','まかセロリ','ドヤッ','ふりむ','ご乱心','コッ☆','ダジャレ警察','プチ岐阜','逆にね','もやし','ンジャメナ','話聞こか？','ほこり','チャージっ！','ひんやりタイム','アヂッ','…つむっ！','からの〜？','へぇ','黒歴史','フラグ','画伯降臨','平成','昭和','江戸','おかん','ツンデレダイス','しらすまん','爆弾','カチコチ','蝋燭','どーなっちゃうの','お掃除','令和','タイムセール','そういうとこだぞ','ん…？','配信者発見','集中線','警察だ!!','パイ投げ','たらい落とし','しらすレインボー','ギガブルーム','まだ大丈夫','気配感知','REC','宝箱','あちらのお客様からです','おばけしらす','オール','罠','むふふ','チラッ','七夕に願いを','誰かなダイス','THE 宇宙','味見ダイス','方角ダイス','しゃしゃりダイス','えっへん天狗','記者会見']},
+  'ネタ':{color:'#ff6eb4',bg:'#fff0f8',items:['もういっかい！','ダウト','ざわざわ','炎','非常口','いつもので','かー','つー','一体感','乗りなッ！','乗りろ…','しーっ','はて…？','やれやれ','ぱぁ。','完全燃焼','激熱','まぶしい','世界一','祭うちわ','ええやん','最強','スリスリ','厨二病','拳','ふぅー!!','そんなバナナ','メシウマ','アニキーー！','仰せのままに','漢','鉄アレイ','しおしお','ヒャッホー！','あざとい','おもしれーやつ','沼','鳥肌注意','すやぁ…','やりおる','あとは頼んだ','おねぎします。','まかセロリ','ドヤッ','ふりむ','ご乱心','コッ☆','ダジャレ警察','プチ岐阜','逆にね','もやし','ンジャメナ','話聞こか？','ほこり','チャージっ！','ひんやりタイム','アヂッ','…つむっ！','からの〜？','へぇ','黒歴史','フラグ','画伯降臨','平成','昭和','江戸','おかん','ツンデレダイス','しらすまん','爆弾','カチコチ','蝋燭','どーなっちゃうの','お掃除','令和','タイムセール','そういうとこだぞ','ん…？','配信者発見','集中線','警察だ!!','パイ投げ','たらい落とし','しらすレインボー','ギガブルーム','まだ大丈夫','気配感知','REC','宝箱','あちらのお客様からです','おばけしらす','オール','罠','むふふ','チラッ','七夕に願いを','誰かなダイス','THE 宇宙','味見ダイス','方角ダイス','しゃしゃりダイス','えっへん天狗','記者会見','参上','ダウト200Pt','肉ダイス','アイリスアウト','予算ダイス','タイムリープ','サァー……']},
   '笑':{color:'#3dcc7a',bg:'#f0fff6',items:['www','草','ドッ','かぷかぷ','こらえ笑い','ブフォッ','微笑','真顔','草(植物)','おもしろー','ガハハ','ズコー','座布団','ビタミン不足','ウケる','またまたぁ','んなアホな','ほんまや','草(大)']},
-  '定番':{color:'#5b9fff',bg:'#f0f6ff',items:['うんうん','なるほど','わかる','わからん','爆笑','号泣','考え中','好物','ふ〜ん','・・・','？','！？','ありがとう！','やだ','ダウト','WWW','草','神','キャンディ','炎','握手','ハイ！','助かる','クラッカー','良さそう','クローバー','ドリンク','ぴえん','バラ','いつもので','一体感','ドッ','ごはん','サラダバー','草（植物）','えへへ','うぐぅ…','ガクブル','サァー','ナムナム','ヒェッ','ちょっと','むっちゃ','もっと','休んで！','寝て！','食べて！','充電中','エナジードリンク','拍手','おかわり','満腹','空腹','オサレ','いえーい！(ホシーカ)','ごっつぁんです','じゅるり','きゅるん（ユラミィ）','ごろごろ（ねこころ）','ぺこぺこ（つむまる）','あわわ','しおしお','ぽかぽか','ウケる','ビクッ！？','ファイティン','？？？','ぱぁぁ','ふんふん','ふわふわ','メンタルブレイク','いっくよー！','ぱぁ','ヒソヒソ','ポカーン','閃き','のど飴','シャキーン！','キラキラ','ひんやりタイム','…どれ？','はらたいこ','ぴたんぴたん','わいわい','ノリノリ','ふりふり','草(大)','お茶','えらい','thank you','うれピーマン','バラ(大)','御意','しらすまん','怒り','ポジティブ足りてる？','パンケーキ','ちょっと待ったああ！','頑張れ','乾杯','エモい','花束','ありがとう','ん…？','うわぁぁん','ウインクチャレンジ','猫耳チャレンジ','結界','タピオカ','くす玉','予言タイム','覚醒','缶詰(風船)','イリアム特製パフェ','缶詰(花)','直感','Happy Birthday（つむるん）','Happy Birthday（ぶくちゃ）','想定通り','想定外','みんなで投票','のりのり一番ノリ']},
-  'えらい':{color:'#ffca3a',bg:'#fffdf0',items:['キリおめ','ナイギフ','ナイス','かわいい','神','１００点','良さそう','世界一','えぐぐ','すごい','すばら','たのしみ','ええやん','天才か！？','最強','かしこ','はなまる','拍手','エモい','チルい','かっこいい','イケボ','オサレ','クール','アニキーー！','漢','あざとい','おもしれーやつ','かわぼ','癒し〜','耳が幸せ','やりおる','よかろう','えらい','コングラ','happy birthday(ねこころ)','happy birthday(ホシーカ)','クラッカー200Pt','拍手200Pt','たいへんよくできました','お見事！','くす玉','ケーキ(誕生日)','かわいい！3000Pt','尊い','なでなで','ハッピーバースデー']},
+  '定番':{color:'#5b9fff',bg:'#f0f6ff',items:['うんうん','なるほど','わかる','わからん','爆笑','号泣','考え中','好物','ふ〜ん','・・・','？','！？','ありがとう！','やだ','ダウト','WWW','草','神','キャンディ','炎','握手','ハイ！','助かる','クラッカー','良さそう','クローバー','ドリンク','ぴえん','バラ','いつもので','一体感','ドッ','ごはん','サラダバー','草（植物）','えへへ','うぐぅ…','ガクブル','サァー','ナムナム','ヒェッ','ちょっと','むっちゃ','もっと','休んで！','寝て！','食べて！','充電中','エナジードリンク','拍手','おかわり','満腹','空腹','オサレ','いえーい！(ホシーカ)','ごっつぁんです','じゅるり','きゅるん（ユラミィ）','ごろごろ（ねこころ）','ぺこぺこ（つむまる）','あわわ','しおしお','ぽかぽか','ウケる','ビクッ！？','ファイティン','？？？','ぱぁぁ','ふんふん','ふわふわ','メンタルブレイク','いっくよー！','ぱぁ','ヒソヒソ','ポカーン','閃き','のど飴','シャキーン！','キラキラ','ひんやりタイム','…どれ？','はらだいこ','ぴたんぴたん','わいわい','ノリノリ','ふりふり','草(大)','お茶','えらい','thank you','うれピーマン','バラ(大)','御意','しらすまん','怒り','ポジティブ足りてる？','パンケーキ','ちょっと待ったああ！','頑張れ','乾杯','エモい','花束','ありがとう','ん…？','うわぁぁん','ウインクチャレンジ','猫耳チャレンジ','結界','タピオカ','くす玉','予言タイム','覚醒','缶詰(風船)','イリアム特製パフェ','缶詰(花)','直感','Happy Birthday（つむるん）','Happy Birthday（ぶくちゃ）','想定通り','想定外','みんなで投票','のりのり一番ノリ','パンケーキ②','パンケーキ③','・・・(100pt)','あの日の夕焼け','わいわい星座']},
+  'えらい':{color:'#ffca3a',bg:'#fffdf0',items:['キリおめ','ナイギフ','ナイス','かわいい','神','１００点','良さそう','世界一','えぐぐ','すごい','すばら','たのしみ','ええやん','天才か！？','最強','かしこ','はなまる','拍手','エモい','チルい','かっこいい','イケボ','オサレ','クール','アニキーー！','漢','あざとい','おもしれーやつ','かわぼ','癒し〜','耳が幸せ','やりおる','よかろう','えらい','コングラ','happy birthday(ねこころ)','happy birthday(ホシーカ)','クラッカー200Pt','拍手200Pt','たいへんよくできました','お見事！','くす玉','ケーキ(誕生日)','かわいい！3000Pt','尊い','なでなで','ハッピーバースデー','happy birthday(さぼぼん)']},
   '挨拶':{color:'#a06aff',bg:'#f8f0ff',items:['はろー！','ようこそ','おつかれさま','おはよう','こんばんは','バイバイ','握手','おかえり','おやすみ','いってきます','いってらっしゃい','いらっしゃい','おじゃまします','ただいま','やってる？','らっしゃっせい！','初見さんヤッホー','遅れた!!','すぐ戻る！','トイレ','フロリダ','しごもど','ちょい落ち','サラダバー','スッ','ヤッホー（さぼぼん）','すやぁ…','やりおる','あとは頼んだ','おねぎします。','またね','こんにちは','また来るね！']},
   'ステージ':{color:'#ff8c42',bg:'#fff6f0',items:['もういっかい！','クラッカー','バラ','サイリウムオレンジ','サイリウムピンク','サイリウム白','サイリウム紫','サイリウム緑','サイリウム赤','サイリウム黄色','サイリウム黄緑','サイリウム黒','いつもので','もっと','祭うちわ','拍手','サイリウム葱','厨二病','アフロしらす','アンコール','ヘドバン','ふぅー！！','キャーッ！！','鳥肌注意','歌神降臨','音符','リクエスト','クラッカー200Pt','バラ(大)','拍手200Pt','よーい','サーチライト','もういっかい','花束','スポットライト','v.i.p','ミラーボール','くす玉','ライト＆フォグ','ライブステージ','花火']},
   'LOVE':{color:'#ff5c6a',bg:'#fff0f2',items:['好物','ハート','かわいい','照れ','キャーッ！','あざとい','かわぼ','呼んだ？','ハート(大)','すこっていい？','嫁に来ないか…？','ズキューン！','唐突な愛','ウインクタイム','すこ','かわいい！3000Pt','尊い','なでなで','大好き','あふれる想い','ここすき','缶詰タワー']},
+  '8周年祭':{color:'#00a8c6',bg:'#f0fcff',items:['打ち明けダイス','かぶって８さぼぼん','かぶって８しらす','かぶって８つむるん','かぶって８ねこころ','かぶって８ぶくちゃ','かぶって８ホシーカ','かぶって８ユラミィ','べたべた８っピース！']},
 };
 
 
@@ -665,11 +693,11 @@ const PETIT_GIFTS={
     'ふぉっふぉっ','やりおる','よかろう','あとは頼んだ','おねぎします。','まかセロリ','ドヤッ','呼んだ？',
     'メンタルブレイク','いっくよー！','ばぁ','ばぁぁぁ','ヒソヒソ','ポカーン','閃き','のど飴',
     '休んで！','寝て！','食べて！','充電中','残量100%','残量1%','ふひひ...','グー',
-    'チョキ','パー','ドラムロール','ご乱心','コッ☆','プチ模卓','ダジャレ警察','逆にね',
+    'チョキ','パー','ドラムロール','ご乱心','コッ☆','プチ岐阜','ダジャレ警察','逆にね',
     'ほこり','もやし','キタコレ','ンジャメナ',
-    'Thank youさばぱん','Thank youしらす','Thank youつむまる','Thank youねこころ',
+    'Thank youさぼぼん','Thank youしらす','Thank youつむまる','Thank youねこころ',
     'Thank youぶくちゃ','Thank youホシーカ','Thank youユラミィ','またまたぁ',
-    'んなアホな','ニヤリ','話聞こか？','罠','むふふ','チラッ'
+    'んなアホな','ニヤリ','話聞こか？','罠','むふふ','チラッ','拳'
   ]},
   '10pt':{color:'#3dcc7a',bg:'#f0fff6',items:[
     'シャキーン！','キラキラ','アヂッ','...つむっ！',
@@ -678,8 +706,10 @@ const PETIT_GIFTS={
     'へぇ','黒歴史','フラグ','画伯降臨',
     '歌神降臨','ほんまや','平成','昭和',
     '江戸','おかん','ふりふり',
-    'Happy Birthday（ぶくちゃ）','想定通り','想定外'
+    'Happy Birthday（ぶくちゃ）','想定通り','想定外','タイムリープ','サァー……'
   ]},
+  '11〜99pt':{color:'#ff8c42',bg:'#fff6f0',items:['おばけしらす','オール']},
+  '10月限定':{color:'#a06aff',bg:'#f8f0ff',items:['10月限定①(5pt)','10月限定②(5pt)','10月限定③(5pt)','10月限定④(5pt)','10月限定⑤(5pt)','10月限定⑥(5pt)','10月限定⑦(5pt)','10月限定⑧(100pt)']},
 };
 
 // ===== STATE =====
@@ -1580,6 +1610,7 @@ function doDarkGacha(n){
   updateDarkCSVCount();
   const rBtn=document.getElementById('dark-result-tweet-btn');
   if(rBtn)rBtn.onclick=()=>tweetDarkResult(0);
+  _lastDarkResult=state.darkHistory[0]||null; // Discord送信は「いま表示中の結果」オブジェクトを直接参照
   renderDarkHistory();
   if(actualN<n)showToast(`⚠️ 在庫切れのため${actualN}回で終了しました`);
 }
@@ -1587,7 +1618,7 @@ function renderDarkHistory(){
   const histList=document.getElementById('dark-history-list');
   if(!histList)return;
   histList.innerHTML=state.darkHistory.slice(0,10).map((h,idx)=>
-    `<div class="dark-hist-item"><div class="dark-hist-meta"><span>${h.name?esc(h.name)+' · ':''}<span style="font-weight:900;color:var(--text)">${h.n}連</span></span><div style="display:flex;align-items:center;gap:6px"><span>${h.time}</span><button class="dark-tweet-btn" onclick="tweetDarkResult(${idx})">🐦</button><button class="dark-hist-del-btn" onclick="deleteDarkHistEntry(${idx})" title="この結果とCSV記録を削除">🗑</button></div></div><div class="dark-hist-tags">${h.results.map(r=>`<span class="dark-hist-tag" style="background:${r.color||getDarkColor(r.rar)}">${esc(r.item)}${r.count>1?`×${r.count}`:''}</span>`).join('')}</div></div>`
+    `<div class="dark-hist-item"><div class="dark-hist-meta"><span>${h.name?esc(h.name)+' · ':''}<span style="font-weight:900;color:var(--text)">${h.n}連</span></span><div style="display:flex;align-items:center;gap:6px"><span>${h.time}</span><button class="dark-tweet-btn" onclick="tweetDarkResult(${idx})">🐦</button><button class="dark-discord-btn" onclick="sendDarkResultDiscord(state.darkHistory[${idx}],this)">📮</button><button class="dark-hist-del-btn" onclick="deleteDarkHistEntry(${idx})" title="この結果とCSV記録を削除">🗑</button></div></div><div class="dark-hist-tags">${h.results.map(r=>`<span class="dark-hist-tag" style="background:${r.color||getDarkColor(r.rar)}">${esc(r.item)}${r.count>1?`×${r.count}`:''}</span>`).join('')}</div></div>`
   ).join('');
 }
 function deleteDarkHistEntry(idx){
@@ -1678,6 +1709,114 @@ function tweetDarkResult(idx){
   let url='https://twitter.com/intent/tweet?text='+encodeURIComponent(text);
   if(replyId)url+='&in_reply_to='+replyId;
   window.open(url,'_blank');
+}
+// ===== DISCORD WEBHOOK =====
+const DISCORD_WEBHOOK_RE=/^https:\/\/(?:(?:ptb|canary)\.)?(?:discord|discordapp)\.com\/api(?:\/v\d+)?\/webhooks\/\d+\/[\w-]+\/?(?:\?.*)?$/;
+let _lastDarkResult=null;   // 結果カードに表示中のガチャ結果（履歴の削除・種類切替でズレないよう参照で保持）
+let _discordSending=false;
+function toggleWebhookVisible(){
+  const el=document.getElementById('dark-discord-webhook');
+  if(!el)return;
+  const hidden=el.style.webkitTextSecurity!=='none';
+  el.style.webkitTextSecurity=hidden?'none':'disc';
+  const eye=document.getElementById('dark-discord-eye');
+  if(eye)eye.textContent=hidden?'🙈':'👁';
+}
+function readDiscordWebhook(){
+  // 貼り付け時に混入しがちな空白・改行・ゼロ幅文字を全て除去
+  const url=(document.getElementById('dark-discord-webhook')?.value||'').replace(/[\s\u200b-\u200d\ufeff]/g,'');
+  if(!url)return{error:'⚠️ Discord Webhook URLを入力してください'};
+  if(!DISCORD_WEBHOOK_RE.test(url))return{error:'⚠️ Webhook URLの形式が正しくありません'};
+  return{url};
+}
+function escDiscordMd(s){return String(s).replace(/([\\*_~`|>])/g,'\\$1');}
+function buildDarkDiscordText(h){
+  const lines=[];
+  if(h.name)lines.push(`**${escDiscordMd(h.name)}**`);
+  lines.push(`🌑 闇ガチャ ${h.n}連`);
+  lines.push('');
+  h.results.forEach(r=>{
+    const count=r.count>1?` ×${r.count}`:'';
+    lines.push(`【${escDiscordMd(r.rar)}】${escDiscordMd(r.item)}${count}`);
+  });
+  return lines.join('\n');
+}
+// Discordの上限は2000文字。行単位で分割し、超過行は文字（サロゲートペア考慮）単位で分割
+function splitDiscordText(text,limit=1900){
+  const chunks=[];let cur='';
+  const push=()=>{if(cur){chunks.push(cur);cur='';}};
+  text.split('\n').forEach(line=>{
+    if(line.length>limit){
+      push();
+      let part='';
+      for(const ch of line){ // サロゲートペアを壊さないよう1文字（コードポイント）ずつ積む
+        if((part+ch).length>limit){chunks.push(part);part='';}
+        part+=ch;
+      }
+      if(part)chunks.push(part);
+      return;
+    }
+    const add=cur?'\n'+line:line;
+    if(cur&&(cur+add).length>limit)push();
+    cur=cur?cur+'\n'+line:line;
+  });
+  push();
+  return chunks.length?chunks:[' '];
+}
+async function postDiscordOnce(url,content,canRetry=true){
+  const res=await fetch(url,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    // @everyone / @here / ユーザー名の入力でメンションが飛ばないようにする
+    body:JSON.stringify({content,allowed_mentions:{parse:[]}})
+  });
+  if(res.status===429&&canRetry){ // レート制限：指定秒数待って1回だけ再試行
+    let wait=1500;
+    try{const j=await res.json();if(j&&j.retry_after!=null)wait=Math.min(Math.ceil(Number(j.retry_after)*1000)+100,10000);}catch(e){}
+    await new Promise(r=>setTimeout(r,wait));
+    return postDiscordOnce(url,content,false);
+  }
+  return res;
+}
+function discordErrorMessage(status){
+  if(status===401||status===404)return '⚠️ このWebhookは無効です（削除された可能性）。URLを作り直してください';
+  if(status===400)return '⚠️ 送信内容がDiscordに拒否されました（HTTP 400）';
+  if(status===429)return '⚠️ 送信が多すぎます。少し待ってからもう一度お試しください';
+  return `⚠️ 送信に失敗しました（HTTP ${status}）`;
+}
+async function dispatchDiscord(url,text,btn,okMsg){
+  if(_discordSending){showToast('⏳ 送信中です。少しお待ちください');return;}
+  _discordSending=true;
+  if(btn)btn.disabled=true;
+  try{
+    const chunks=splitDiscordText(text);
+    for(let i=0;i<chunks.length;i++){
+      const body=chunks.length>1?`(${i+1}/${chunks.length})\n${chunks[i]}`:chunks[i];
+      const res=await postDiscordOnce(url,body);
+      if(!(res.ok||res.status===204)){
+        showToast(discordErrorMessage(res.status)+(chunks.length>1?`（${i+1}/${chunks.length}通目）`:''));
+        return;
+      }
+      if(i<chunks.length-1)await new Promise(r=>setTimeout(r,600));
+    }
+    showToast(okMsg);
+  }catch(e){
+    showToast('⚠️ 送信に失敗しました（通信エラー）');
+  }finally{
+    _discordSending=false;
+    if(btn)btn.disabled=false;
+  }
+}
+async function sendDarkResultDiscord(h,btn){
+  if(!h){showToast('⚠️ 送信できるガチャ結果がありません');return;}
+  const{url,error}=readDiscordWebhook();
+  if(error){showToast(error);return;}
+  await dispatchDiscord(url,buildDarkDiscordText(h),btn,'📮 Discordに送信しました！');
+}
+async function sendDiscordTest(btn){
+  const{url,error}=readDiscordWebhook();
+  if(error){showToast(error);return;}
+  await dispatchDiscord(url,'✅ テスト送信：IRIAM配信補助ツールからのWebhook接続OKです！',btn,'✅ テストメッセージを送信しました');
 }
 
 // ===== DURABILITY =====
@@ -1934,6 +2073,7 @@ function saveAll(silent){
     accentColor:getComputedStyle(document.documentElement).getPropertyValue('--ac').trim(),
     tweetCatState:{...tweetCatState},
     hashtag:(document.getElementById('tweet-hashtag')?.value||''),
+    discordWebhook:(document.getElementById('dark-discord-webhook')?.value||''),
   };
 
   try{
@@ -2114,6 +2254,8 @@ try{
     const sd=JSON.parse(savedRaw);
     const hEl=document.getElementById('tweet-hashtag');
     if(hEl&&sd.hashtag!=null)hEl.value=sd.hashtag;
+    const dwEl=document.getElementById('dark-discord-webhook');
+    if(dwEl&&sd.discordWebhook!=null)dwEl.value=sd.discordWebhook;
   }
 }catch(e){}
 
